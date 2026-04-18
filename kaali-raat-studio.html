@@ -1,0 +1,1793 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Kaali Raat — Horror Story Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Noto+Sans+Devanagari:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blood: #cc0000;
+  --blood-d: #6a0000;
+  --blood-b: #ff3333;
+  --ember: #ff7700;
+  --bone: #ede0c8;
+  --bone-dim: #a09080;
+  --void: #060606;
+  --panel: #0f0f0f;
+  --panel2: #161616;
+  --panel3: #1c1c1c;
+  --border: #250000;
+  --border2: #2e2e2e;
+  --green: #44bb66;
+  --radius: 12px;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  background: var(--void);
+  color: var(--bone);
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* ══ SCREENS ══ */
+.screen { display:none; min-height:100dvh; flex-direction:column; }
+.screen.active { display:flex; }
+
+/* ══════════════════════════════
+   SCREEN 0 — SETUP (API + Config)
+══════════════════════════════ */
+#screenSetup {
+  align-items: center;
+  justify-content: center;
+  padding: 24px 20px;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, rgba(120,0,0,0.25) 0%, transparent 60%),
+    var(--void);
+}
+
+.setup-card {
+  width: 100%;
+  max-width: 440px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.brand {
+  text-align: center;
+  padding-bottom: 8px;
+}
+.brand-skull { font-size: 44px; margin-bottom: 8px; display:block; animation: floatSkull 3s ease-in-out infinite; }
+@keyframes floatSkull { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+
+.brand-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: clamp(24px, 7vw, 36px);
+  font-weight: 900;
+  color: var(--blood-b);
+  text-shadow: 0 0 20px rgba(255,0,0,0.6), 0 0 50px rgba(255,0,0,0.2);
+  letter-spacing: 5px;
+  display: block;
+}
+.brand-tagline {
+  font-size: 11px;
+  letter-spacing: 3px;
+  color: var(--bone-dim);
+  text-transform: uppercase;
+  margin-top: 4px;
+  display: block;
+}
+
+.card-block {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.card-title {
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--blood);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+.field { display:flex; flex-direction:column; gap:6px; }
+.field label { font-size: 11px; color: var(--bone-dim); letter-spacing: 1px; }
+
+.field input,
+.field select,
+.field textarea {
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  color: var(--bone);
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+  resize: vertical;
+}
+.field input:focus, .field select:focus, .field textarea:focus {
+  border-color: var(--blood);
+  box-shadow: 0 0 0 3px rgba(200,0,0,0.12);
+}
+.field select option { background: #111; }
+
+.api-hint {
+  font-size: 11px;
+  color: #555;
+  line-height: 1.5;
+}
+.api-hint a { color: var(--blood); text-decoration: none; }
+
+/* Prompt presets */
+.preset-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  background: var(--panel3);
+  border: 1px solid var(--border2);
+  color: var(--bone-dim);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip:hover, .chip.active {
+  border-color: var(--blood);
+  color: var(--bone);
+  background: #1a0000;
+}
+
+/* ══════════════════════════════
+   SCREEN 1 — STORY WRITER
+══════════════════════════════ */
+#screenStory {
+  flex-direction: column;
+  background: var(--void);
+}
+
+/* Top bar */
+.topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.topbar-logo {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--blood-b);
+  letter-spacing: 2px;
+  text-shadow: 0 0 10px rgba(255,0,0,0.5);
+}
+.topbar-ep {
+  font-size: 11px;
+  color: var(--bone-dim);
+  background: var(--panel2);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border2);
+}
+.topbar-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+/* Story area */
+.story-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  scroll-behavior: smooth;
+}
+
+/* Story chunk */
+.story-chunk {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 16px;
+  animation: chunkIn 0.4s ease;
+  position: relative;
+  overflow: hidden;
+}
+@keyframes chunkIn {
+  from { opacity:0; transform:translateY(10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.story-chunk::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: linear-gradient(to bottom, var(--blood-b), var(--blood-d));
+  border-radius: 3px 0 0 3px;
+}
+
+.chunk-meta {
+  font-size: 10px;
+  color: var(--blood);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.chunk-text {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--bone);
+  white-space: pre-wrap;
+}
+
+/* Typing cursor */
+.cursor-blink {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--blood-b);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.7s step-end infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+/* Continue button */
+.continue-btn {
+  background: linear-gradient(135deg, #aa0000, #660000);
+  color: #fff;
+  border: none;
+  border-radius: 50px;
+  padding: 14px 28px;
+  font-size: 15px;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 20px rgba(180,0,0,0.4);
+  transition: all 0.2s;
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+}
+.continue-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(200,0,0,0.5);
+}
+.continue-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.continue-btn.loading {
+  background: linear-gradient(135deg, #880000, #440000);
+  animation: btnPulse 1.5s ease-in-out infinite;
+}
+@keyframes btnPulse {
+  0%,100%{box-shadow:0 4px 20px rgba(180,0,0,0.4)}
+  50%{box-shadow:0 4px 30px rgba(200,0,0,0.7)}
+}
+
+/* Bottom controls */
+.bottom-bar {
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.prompt-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.prompt-input {
+  flex: 1;
+  background: var(--panel2);
+  border: 1px solid var(--border2);
+  color: var(--bone);
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  outline: none;
+  resize: none;
+  max-height: 100px;
+  min-height: 44px;
+  transition: border-color 0.2s;
+  line-height: 1.4;
+}
+.prompt-input:focus { border-color: var(--blood); }
+.prompt-input::placeholder { color: #444; }
+
+.send-btn {
+  background: var(--blood);
+  color: #fff;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.send-btn:hover { background: var(--blood-b); }
+.send-btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.action-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.action-chips::-webkit-scrollbar { display:none; }
+
+.action-chip {
+  background: var(--panel3);
+  border: 1px solid var(--border2);
+  color: var(--bone-dim);
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 11px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.action-chip:hover {
+  border-color: var(--blood);
+  color: var(--bone);
+  background: #1a0000;
+}
+
+/* End story banner */
+.end-banner {
+  background: linear-gradient(135deg, #0a0000, #1a0000);
+  border: 1px solid var(--blood-d);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  animation: chunkIn 0.4s ease;
+}
+.end-banner.show { display:flex; }
+.end-banner-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 18px;
+  color: var(--blood-b);
+  text-shadow: 0 0 15px rgba(255,0,0,0.5);
+}
+.end-banner-sub { font-size: 13px; color: var(--bone-dim); }
+
+/* ══════════════════════════════
+   SCREEN 2 — THUMBNAIL
+══════════════════════════════ */
+#screenThumb {
+  flex-direction: column;
+  background: var(--void);
+}
+
+.thumb-topbar {
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.thumb-topbar-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 13px;
+  color: var(--blood-b);
+  letter-spacing: 2px;
+}
+
+.thumb-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Thumbnail canvas */
+.tn-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--border);
+  box-shadow: 0 8px 40px rgba(180,0,0,0.2);
+  position: relative;
+}
+
+#tnCanvas {
+  width: 1280px;
+  height: 720px;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+  display: block;
+}
+
+/* Thumb fields */
+.thumb-fields {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Color row */
+.color-swatches {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cswatch {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.cswatch.active, .cswatch:hover {
+  border-color: #fff;
+  transform: scale(1.15);
+}
+
+/* ══ THUMBNAIL ELEMENTS ══ */
+.tn-layer { position:absolute; inset:0; }
+.tn-z10 { z-index:10; }
+.tn-z20 { z-index:20; }
+.tn-z30 { z-index:30; }
+
+.tn-moon {
+  position:absolute;
+  border-radius:50%;
+  animation: moonPulse 4s ease-in-out infinite alternate;
+}
+@keyframes moonPulse {
+  0%{box-shadow:0 0 40px 20px rgba(255,200,200,0.3)}
+  100%{box-shadow:0 0 80px 40px rgba(255,100,100,0.45)}
+}
+
+.tn-smoke-layer {
+  position:absolute;
+  border-radius:50%;
+  mix-blend-mode:screen;
+  animation: smokeF linear infinite;
+}
+@keyframes smokeF {
+  0%{transform:translateY(0) scale(1);opacity:0.5}
+  100%{transform:translateY(-50px) scale(1.1);opacity:0.8}
+}
+
+.tn-eye {
+  border-radius:50%;
+  animation: eyeG 2.5s ease-in-out infinite alternate;
+}
+@keyframes eyeG {
+  0%{transform:scale(0.9)}
+  100%{transform:scale(1.15)}
+}
+
+.tn-drip {
+  border-radius:0 0 50% 50%;
+  animation: dripA ease-in-out infinite alternate;
+}
+@keyframes dripA {
+  0%{height:var(--dh)}
+  100%{height:calc(var(--dh) + 14px)}
+}
+
+.tn-channel-text {
+  position:absolute;
+  top:28px; left:50%;
+  transform:translateX(-50%);
+  font-family:'Cinzel Decorative',serif;
+  font-weight:900;
+  white-space:nowrap;
+  z-index:30;
+  text-shadow:0 0 15px rgba(255,0,0,0.9), 0 0 40px rgba(255,0,0,0.4), 2px 2px 0 #000;
+}
+.tn-badge {
+  position:absolute;
+  top:84px; left:50px;
+  font-weight:900;
+  letter-spacing:2px;
+  z-index:30;
+  border-radius:4px;
+  white-space:nowrap;
+}
+.tn-season-text {
+  position:absolute;
+  top:84px; right:50px;
+  font-weight:400;
+  letter-spacing:3px;
+  z-index:30;
+}
+.tn-main-title {
+  position:absolute;
+  left:0; right:0;
+  bottom:110px;
+  text-align:center;
+  z-index:30;
+  font-family:'Noto Sans Devanagari',sans-serif;
+  font-weight:900;
+  color:#fff;
+  line-height:1.05;
+  text-shadow:0 0 30px rgba(255,0,0,0.9), 0 0 60px rgba(255,0,0,0.5), 3px 3px 0 #600, -2px -2px 0 #000, 5px 5px 16px #000;
+}
+.tn-sub-title {
+  position:absolute;
+  left:0; right:0;
+  bottom:72px;
+  text-align:center;
+  z-index:30;
+  font-family:'Noto Sans Devanagari',sans-serif;
+  font-weight:300;
+  letter-spacing:4px;
+  text-shadow:0 2px 10px #000, 0 0 25px rgba(180,0,0,0.6);
+}
+
+/* ══ SHARED BUTTONS ══ */
+.btn {
+  border:none;
+  border-radius:8px;
+  padding:12px 18px;
+  font-size:13px;
+  font-family:'Noto Sans Devanagari',sans-serif;
+  font-weight:700;
+  cursor:pointer;
+  transition:all 0.2s;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  letter-spacing:0.5px;
+}
+.btn-primary {
+  background:linear-gradient(135deg,#aa0000,#660000);
+  color:#fff;
+  box-shadow:0 4px 20px rgba(180,0,0,0.4);
+}
+.btn-primary:hover { background:linear-gradient(135deg,#cc0000,#880000); transform:translateY(-1px); }
+.btn-ghost {
+  background:transparent;
+  color:var(--bone-dim);
+  border:1px solid var(--border2);
+}
+.btn-ghost:hover { border-color:var(--blood); color:var(--bone); }
+.btn-icon {
+  background:transparent;
+  color:var(--bone-dim);
+  padding:8px;
+  border-radius:6px;
+}
+.btn-icon:hover { background:var(--panel2); color:var(--bone); }
+
+.btn-row { display:flex; gap:8px; }
+.btn-row .btn { flex:1; }
+
+/* ══ EPISODE HISTORY (bottom sheet style) ══ */
+.ep-list-section {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ep-list-header {
+  padding: 12px 16px;
+  font-size: 10px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--blood);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ep-list-body {
+  max-height: 220px;
+  overflow-y: auto;
+}
+.ep-list-body::-webkit-scrollbar { width:3px; }
+.ep-list-body::-webkit-scrollbar-thumb { background:var(--blood-d); border-radius:2px; }
+
+.ep-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 16px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:background 0.15s;
+}
+.ep-row:last-child { border-bottom:none; }
+.ep-row:hover { background:var(--panel2); }
+.ep-row.current { background:#120000; border-left:3px solid var(--blood); }
+
+.ep-row-info { flex:1; min-width:0; }
+.ep-row-num { font-size:10px; color:var(--blood); letter-spacing:1px; }
+.ep-row-title { font-size:13px; color:var(--bone); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.ep-row-words { font-size:10px; color:#444; }
+
+.ep-row-del {
+  background:none; border:none;
+  color:#333; font-size:14px;
+  cursor:pointer; padding:4px;
+  border-radius:4px; flex-shrink:0;
+  transition:color 0.15s;
+}
+.ep-row-del:hover { color:var(--blood); }
+
+.ep-empty { padding:20px; text-align:center; font-size:12px; color:#333; }
+
+/* ══ TOAST ══ */
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  color: var(--bone);
+  padding: 10px 20px;
+  border-radius: 50px;
+  font-size: 13px;
+  z-index: 999;
+  opacity: 0;
+  transition: all 0.3s;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ══ LOADING SPINNER ══ */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(255,255,255,0.2);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* ══ SCROLL TO BOTTOM ══ */
+.scroll-fab {
+  position: fixed;
+  bottom: 160px;
+  right: 16px;
+  width: 40px; height: 40px;
+  background: var(--blood-d);
+  border: 1px solid var(--blood);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  box-shadow: 0 4px 16px rgba(150,0,0,0.5);
+}
+.scroll-fab.visible { opacity:1; pointer-events:all; }
+
+/* ══ MODAL ══ */
+.modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  z-index: 200;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.modal-overlay.open {
+  opacity: 1;
+  pointer-events: all;
+}
+.modal-sheet {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px;
+  width: 100%;
+  max-width: 540px;
+  max-height: 80dvh;
+  overflow-y: auto;
+  transform: translateY(40px);
+  transition: transform 0.3s;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.modal-overlay.open .modal-sheet {
+  transform: translateY(0);
+}
+.modal-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 16px;
+  color: var(--blood-b);
+  text-align: center;
+}
+
+/* ══ WORD COUNT ══ */
+.wordcount-bar {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 0;
+}
+.wc-track {
+  flex:1;
+  height:3px;
+  background:var(--panel3);
+  border-radius:2px;
+  overflow:hidden;
+}
+.wc-fill {
+  height:100%;
+  background:linear-gradient(90deg, var(--blood-d), var(--blood-b));
+  border-radius:2px;
+  transition:width 0.3s;
+}
+.wc-label {
+  font-size:10px;
+  color:var(--bone-dim);
+  white-space:nowrap;
+}
+</style>
+</head>
+<body>
+
+<!-- ══════ SCREEN 0: SETUP ══════ -->
+<div class="screen active" id="screenSetup">
+  <div class="setup-card">
+    <div class="brand">
+      <span class="brand-skull">💀</span>
+      <span class="brand-name">KAALI RAAT</span>
+      <span class="brand-tagline">Horror Story Studio</span>
+    </div>
+
+    <!-- API Key (hidden - hardcoded) -->
+    <div class="card-block" style="display:none;">
+      <div class="card-title">🔑 OpenRouter API Key</div>
+      <div class="field">
+        <label>Apni API Key daalein</label>
+        <input type="password" id="apiKeyInput" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="api-hint">
+        Free key milegi → <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a><br>
+        Key sirf is device par save hogi, kahi nahi jayegi ✓
+      </div>
+    </div>
+
+    <!-- Episode Config -->
+    <div class="card-block">
+      <div class="card-title">🎬 Episode Setup</div>
+      <div class="field">
+        <label>Channel Name</label>
+        <input type="text" id="cfgChannel" value="KAALI RAAT" maxlength="20">
+      </div>
+      <div class="field">
+        <label>Season</label>
+        <input type="text" id="cfgSeason" value="SEASON 1" maxlength="15">
+      </div>
+      <div class="field">
+        <label>Episode Number</label>
+        <input type="text" id="cfgEp" value="EP 01" maxlength="10">
+      </div>
+      <div class="field">
+        <label>Story Title (Hindi mein)</label>
+        <input type="text" id="cfgTitle" value="पुरानी हवेली का राज" maxlength="50">
+      </div>
+    </div>
+
+    <!-- Story Prompt -->
+    <div class="card-block">
+      <div class="card-title">✍️ Story Prompt / Idea</div>
+      <div class="preset-chips" id="presetChips">
+        <div class="chip" data-p="Ek purani haveli mein ek nayi family shift hoti hai. Raat ko awaazein aati hain...">🏚 Haveli</div>
+        <div class="chip" data-p="Highway pe raat ko ek driver ko ek aurat hitchhike karti mili. Wo seedha ghar pahunch gayi...">🌙 Highway</div>
+        <div class="chip" data-p="Ek bachche ko roz raat ko ek ajooba dost milta hai jo sirf use dikh ta hai...">👁 Ajooba Dost</div>
+        <div class="chip" data-p="Gaon mein ek purani dargah ke paas log gayab ho rahe hain. Ek journalist ne investigate kiya...">⛩ Dargah</div>
+        <div class="chip" data-p="Ek ladke ko apne purane ghar mein sealed room mila. Andar ek diary thi...">📖 Sealed Room</div>
+        <div class="chip" data-p="Jungle mein camping ke dauran teen dost alag ho gaye. Sirf ek wapas aaya...">🌲 Jungle</div>
+      </div>
+      <div class="field" style="margin-top:8px;">
+        <label>Ya khud likho apna prompt</label>
+        <textarea id="cfgPrompt" rows="3" placeholder="Story ka idea, characters, setting... jo bhi dimag mein aaye likho. AI baaki karega."></textarea>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="startBtn" onclick="startStudio()" style="width:100%;padding:16px;font-size:15px;">
+      🎃 Story Likhna Shuru Karo
+    </button>
+
+    <!-- Saved Episodes -->
+    <div class="ep-list-section" id="savedEpSection">
+      <div class="ep-list-header">
+        <span>📋 Saved Episodes</span>
+        <span id="epCountBadge" style="color:var(--bone-dim);font-size:11px;"></span>
+      </div>
+      <div class="ep-list-body" id="setupEpList">
+        <div class="ep-empty">Koi episode save nahi hua abhi</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════ SCREEN 1: STORY WRITER ══════ -->
+<div class="screen" id="screenStory">
+
+  <div class="topbar">
+    <button class="btn btn-icon" onclick="goToSetup()">←</button>
+    <span class="topbar-logo">☠ KAALI RAAT</span>
+    <span class="topbar-ep" id="topbarEp">EP 01</span>
+    <div class="topbar-actions">
+      <button class="btn btn-icon" title="Thumbnail" onclick="goToThumb()">🎨</button>
+      <button class="btn btn-icon" title="Save" onclick="saveCurrentEpisode()">💾</button>
+    </div>
+  </div>
+
+  <!-- Story chunks appear here -->
+  <div class="story-area" id="storyArea">
+    <div style="text-align:center;padding:40px 20px;color:#333;font-size:13px;">
+      Neeche "Continue Karo" dabao — AI story likhna shuru karega...
+    </div>
+  </div>
+
+  <!-- Word count bar -->
+  <div style="padding:0 16px 4px;background:var(--panel);border-top:1px solid var(--border);">
+    <div class="wordcount-bar">
+      <span class="wc-label">0 words</span>
+      <div class="wc-track"><div class="wc-fill" id="wcFill" style="width:0%"></div></div>
+      <span class="wc-label" id="wcTarget">/ ~1500</span>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div class="bottom-bar">
+    <!-- Quick action chips -->
+    <div class="action-chips">
+      <div class="action-chip" onclick="setPromptHint('Aur tension badhao, kuch bura hone wala hai')">😱 Tension Badhao</div>
+      <div class="action-chip" onclick="setPromptHint('Ek creepy turn aao story mein')">👻 Creepy Turn</div>
+      <div class="action-chip" onclick="setPromptHint('Character ko aur describe karo')">👤 Character</div>
+      <div class="action-chip" onclick="setPromptHint('Scene ka atmosphere aur dark karo')">🌑 Dark Karo</div>
+      <div class="action-chip" onclick="setPromptHint('Dialog likhao characters ke beech')">💬 Dialog</div>
+      <div class="action-chip" onclick="setPromptHint('Ek shocking revelation aao')">⚡ Twist!</div>
+      <div class="action-chip" onclick="endStoryNow()">🔚 Story End Karo</div>
+    </div>
+
+    <!-- Prompt input row -->
+    <div class="prompt-row">
+      <textarea class="prompt-input" id="promptInput"
+        placeholder="Kuch direction do (optional)... ya khali chhodo"
+        rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendContinue();}"
+      ></textarea>
+      <button class="send-btn" id="sendBtn" onclick="sendContinue()">▶</button>
+    </div>
+
+    <!-- Continue / End buttons -->
+    <div style="display:flex;gap:8px;">
+      <button class="continue-btn" id="continueBtn" onclick="sendContinue()">
+        <span>📖 Continue Karo</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- End story banner -->
+  <div class="end-banner" id="endBanner" style="margin:0 16px 16px;">
+    <div class="end-banner-title">🩸 The End 🩸</div>
+    <div class="end-banner-sub">Story complete! Ab thumbnail banao ya naya episode shuru karo.</div>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goToThumb()">🎨 Thumbnail Banao</button>
+      <button class="btn btn-ghost" onclick="goToSetup()">+ Naya Episode</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════ SCREEN 2: THUMBNAIL ══════ -->
+<div class="screen" id="screenThumb">
+  <div class="thumb-topbar">
+    <button class="btn btn-icon" onclick="showScreen('screenStory')">←</button>
+    <span class="thumb-topbar-title">🎨 Thumbnail Studio</span>
+    <div style="margin-left:auto;display:flex;gap:8px;">
+      <button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="printThumb()">🖨 Print</button>
+    </div>
+  </div>
+
+  <div class="thumb-content">
+
+    <!-- Live thumbnail preview -->
+    <div>
+      <div style="font-size:10px;letter-spacing:2px;color:var(--bone-dim);text-transform:uppercase;margin-bottom:8px;">
+        Live Preview — 1280×720
+      </div>
+      <div class="tn-wrap" id="tnWrap">
+        <div id="tnCanvas">
+          <!-- BG -->
+          <div id="tnBg" class="tn-layer" style="z-index:1;background:#000;"></div>
+          <div id="tnGrad" class="tn-layer" style="z-index:2;"></div>
+          <div id="tnSmoke" class="tn-layer" style="z-index:3;overflow:hidden;"></div>
+          <!-- Moon -->
+          <div id="tnMoon" class="tn-moon" style="z-index:4;"></div>
+          <!-- Trees -->
+          <div id="tnTrees" style="position:absolute;bottom:0;left:0;right:0;height:340px;z-index:5;"></div>
+          <!-- Blood drips -->
+          <div style="position:absolute;top:0;left:0;right:0;height:8px;z-index:9;background:linear-gradient(to bottom,#600,transparent);"></div>
+          <div id="tnDrips" style="position:absolute;top:0;left:0;right:0;height:90px;display:flex;gap:16px;padding:0 50px;align-items:flex-start;z-index:9;overflow:hidden;"></div>
+          <!-- Crack SVG -->
+          <svg style="position:absolute;inset:0;width:100%;height:100%;z-index:10;opacity:0.15;" viewBox="0 0 1280 720" id="tnCracks">
+            <path d="M640 0 L648 200 L618 290 L682 400 L640 720" stroke="#f00" stroke-width="1.5" fill="none"/>
+            <path d="M648 200 L705 235 L725 200" stroke="#f00" stroke-width="1" fill="none" opacity="0.5"/>
+            <path d="M618 290 L565 330 L582 360" stroke="#f00" stroke-width="0.8" fill="none" opacity="0.4"/>
+            <path d="M0 380 L200 355 L270 390 L360 362" stroke="#f00" stroke-width="1" fill="none" opacity="0.3"/>
+            <path d="M1280 210 L1090 235 L1040 275 L1015 335" stroke="#f00" stroke-width="1" fill="none" opacity="0.3"/>
+          </svg>
+          <!-- Corner ornaments -->
+          <svg style="position:absolute;top:0;left:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC1">
+            <path d="M0 0 L75 0 L75 7 L7 7 L7 75 L0 75 Z" fill="#cc0000" opacity="0.6"/>
+            <path d="M0 0 L36 0 L36 3 L3 3 L3 36 L0 36 Z" fill="#cc0000" opacity="0.8"/>
+          </svg>
+          <svg style="position:absolute;top:0;right:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC2">
+            <path d="M110 0 L35 0 L35 7 L103 7 L103 75 L110 75 Z" fill="#cc0000" opacity="0.6"/>
+            <path d="M110 0 L74 0 L74 3 L107 3 L107 36 L110 36 Z" fill="#cc0000" opacity="0.8"/>
+          </svg>
+          <svg style="position:absolute;bottom:0;left:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC3">
+            <path d="M0 110 L75 110 L75 103 L7 103 L7 35 L0 35 Z" fill="#cc0000" opacity="0.6"/>
+          </svg>
+          <svg style="position:absolute;bottom:0;right:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC4">
+            <path d="M110 110 L35 110 L35 103 L103 103 L103 35 L110 35 Z" fill="#cc0000" opacity="0.6"/>
+          </svg>
+          <!-- Figure -->
+          <div id="tnFigure" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);z-index:15;"></div>
+          <!-- Eyes -->
+          <div id="tnEyes" style="position:absolute;bottom:375px;left:50%;transform:translateX(-50%);display:flex;gap:42px;z-index:16;"></div>
+          <!-- Ground mist -->
+          <div id="tnMist" style="position:absolute;bottom:0;left:0;right:0;height:180px;z-index:17;"></div>
+          <!-- Vignette -->
+          <div class="tn-layer" style="z-index:20;background:radial-gradient(ellipse 88% 88% at 50% 50%,transparent 40%,rgba(0,0,0,0.82) 100%);"></div>
+          <!-- Text layers -->
+          <div class="tn-channel-text" id="tnChanText" style="font-size:36px;color:#ff2222;letter-spacing:7px;">KAALI RAAT</div>
+          <div class="tn-badge" id="tnBadgeText" style="background:#cc0000;color:#fff;font-size:19px;padding:6px 22px;box-shadow:0 0 20px rgba(200,0,0,0.7);">EP 01</div>
+          <div class="tn-season-text" id="tnSeasonText" style="font-size:17px;color:rgba(200,140,140,0.7);">SEASON 1</div>
+          <div class="tn-main-title" id="tnMainTitle" style="font-size:90px;padding:0 60px;">पुरानी हवेली का राज</div>
+          <div class="tn-sub-title" id="tnSubTitle" style="font-size:26px;color:rgba(220,160,160,0.85);padding:0 60px;">एक रात जो बदल गई सब कुछ...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Thumb controls -->
+    <div class="thumb-fields">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--blood);text-transform:uppercase;">🎨 Customize</div>
+
+      <div class="field">
+        <label>Story Title</label>
+        <input type="text" id="tnInTitle" oninput="updateThumb()" maxlength="35">
+      </div>
+      <div class="field">
+        <label>Tagline</label>
+        <input type="text" id="tnInSub" oninput="updateThumb()" maxlength="55">
+      </div>
+      <div class="field">
+        <label>Theme Color</label>
+        <div class="color-swatches">
+          <div class="cswatch active" style="background:#cc0000" data-c="#cc0000" onclick="setThumbColor(this)"></div>
+          <div class="cswatch" style="background:#8800cc" data-c="#8800cc" onclick="setThumbColor(this)"></div>
+          <div class="cswatch" style="background:#005599" data-c="#005599" onclick="setThumbColor(this)"></div>
+          <div class="cswatch" style="background:#006633" data-c="#006633" onclick="setThumbColor(this)"></div>
+          <div class="cswatch" style="background:#cc6600" data-c="#cc6600" onclick="setThumbColor(this)"></div>
+          <div class="cswatch" style="background:#880033" data-c="#880033" onclick="setThumbColor(this)"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Background</label>
+        <select id="tnInBg" onchange="updateThumb()">
+          <option value="graveyard">🪦 Graveyard Night</option>
+          <option value="haunted">🏚 Haunted Mansion</option>
+          <option value="forest">🌲 Dark Forest</option>
+          <option value="void">🌑 Pure Void</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary" onclick="autoGenerateTagline()" id="aiTaglineBtn">
+        🤖 AI se Tagline Generate Karo
+      </button>
+    </div>
+
+    <!-- Export -->
+    <div class="thumb-fields">
+      <div style="font-size:10px;letter-spacing:2px;color:var(--blood);text-transform:uppercase;">💾 Save</div>
+      <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">
+        <strong style="color:var(--bone);">Mobile par save karne ke liye:</strong><br>
+        1. Screenshot lo is preview ka<br>
+        2. Ya Print → PDF save karo<br>
+        3. 1280×720 crop karo kisi bhi editor mein
+      </div>
+      <button class="btn btn-ghost" onclick="printThumb()">🖨 Print / PDF Save</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- Scroll FAB -->
+<div class="scroll-fab" id="scrollFab" onclick="scrollToBottom()">↓</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ══ STATE ══
+const SK = 'kaali_raat_v2';
+const HARDCODED_KEY = 'YOUR_OPENROUTER_API_KEY_HERE'; // <-- Yahan apni key daalo
+let state = {
+  apiKey: HARDCODED_KEY,
+  channel: 'KAALI RAAT',
+  season: 'SEASON 1',
+  epNum: 'EP 01',
+  title: 'पुरानी हवेली का राज',
+  prompt: '',
+  storyChunks: [],
+  storyEnded: false,
+  thumbColor: '#cc0000',
+  thumbBg: 'graveyard',
+  currentEpId: null,
+};
+
+// ══ PERSIST ══
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem(SK + '_state'));
+    if (d) { state = { ...state, ...d }; }
+  } catch {}
+}
+function save() {
+  try { localStorage.setItem(SK + '_state', JSON.stringify(state)); } catch {}
+}
+function getEpisodes() {
+  try { return JSON.parse(localStorage.getItem(SK + '_eps')) || []; } catch { return []; }
+}
+function saveEpisodes(eps) {
+  try { localStorage.setItem(SK + '_eps', JSON.stringify(eps)); } catch {}
+}
+
+// ══ SCREEN NAV ══
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.toggle('active', s.id === id);
+  });
+  if (id === 'screenSetup') renderSetupEpList();
+  if (id === 'screenThumb') { initThumb(); scaleThumb(); }
+  if (id === 'screenStory') scrollToBottom();
+}
+function goToSetup() {
+  saveCurrentEpisode(true);
+  showScreen('screenSetup');
+  restoreSetupForm();
+}
+function goToThumb() { showScreen('screenThumb'); }
+function restoreSetupForm() {
+  state.apiKey = HARDCODED_KEY;
+  document.getElementById('cfgChannel').value = state.channel;
+  document.getElementById('cfgSeason').value = state.season;
+  document.getElementById('cfgEp').value = state.epNum;
+  document.getElementById('cfgTitle').value = state.title;
+  document.getElementById('cfgPrompt').value = state.prompt;
+}
+
+// ══ PRESETS ══
+document.querySelectorAll('#presetChips .chip').forEach(c => {
+  c.addEventListener('click', () => {
+    document.getElementById('cfgPrompt').value = c.dataset.p;
+    document.querySelectorAll('#presetChips .chip').forEach(x => x.classList.remove('active'));
+    c.classList.add('active');
+  });
+});
+
+// ══ START ══
+async function startStudio() {
+  state.apiKey = HARDCODED_KEY;
+  const key = state.apiKey;
+  if (!key || key === 'YOUR_OPENROUTER_API_KEY_HERE') { toast('⚠️ API key set nahi hai! File mein HARDCODED_KEY update karo.'); return; }
+  state.channel = document.getElementById('cfgChannel').value.trim() || 'KAALI RAAT';
+  state.season = document.getElementById('cfgSeason').value.trim() || 'SEASON 1';
+  state.epNum = document.getElementById('cfgEp').value.trim() || 'EP 01';
+  state.title = document.getElementById('cfgTitle').value.trim() || 'Horror Story';
+  state.prompt = document.getElementById('cfgPrompt').value.trim();
+  state.storyChunks = [];
+  state.storyEnded = false;
+  state.currentEpId = Date.now().toString();
+  save();
+
+  document.getElementById('topbarEp').textContent = state.epNum + ' · ' + state.title;
+  document.getElementById('endBanner').classList.remove('show');
+  document.getElementById('storyArea').innerHTML = '';
+  updateWordCount();
+  showScreen('screenStory');
+
+  // Auto-generate first chunk
+  await sendContinue(true);
+}
+
+// ══ STORY GENERATION ══
+let isGenerating = false;
+let wordCount = 0;
+const TARGET_WORDS = 1500;
+
+async function sendContinue(isFirst = false) {
+  if (isGenerating || state.storyEnded) return;
+  const hint = document.getElementById('promptInput').value.trim();
+
+  isGenerating = true;
+  setBtnsLoading(true);
+
+  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Tujhe ek gripping, scary Hindi horror story likhni hai jo YouTube ke liye 2D animated cartoon video mein use hogi.
+
+RULES:
+- Pure Hindi mein likho (Hinglish allowed, English words natural flow mein thik hain)
+- Har chunk 200-280 words ka hona chahiye
+- Story slowly build karni hai — atmosphere, suspense, dread create karo
+- Emotional descriptions, sensory details (smells, sounds, textures) use karo
+- Pehle chunk mein scene setup karo, characters introduce karo
+- Har chunk ke end mein ek cliffhanger ya mystery chhodo taaki reader aage padhna chahe
+- Story TAB TAK continue karni hai jab tak "STORY END KARO" instruction na mile
+- Kabhi bhi khud story end mat karo — sirf continue karo aur ek hook pe chhodo
+- Dialogues include karo jahan zarurat ho
+- 2D cartoon animation ke liye visual scenes describe karo`;
+
+  // Build conversation history
+  const messages = [];
+  const storyContext = state.storyChunks.map((c,i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
+
+  if (state.storyChunks.length === 0) {
+    const userMsg = `Story shuru karo:\n\nTitle: ${state.title}\n\n${state.prompt ? 'Prompt/Idea: ' + state.prompt + '\n\n' : ''}Pehla part likho — scene set karo, atmosphere build karo, 1-2 characters introduce karo. Suspense start karo. 200-280 words.`;
+    messages.push({ role: 'user', content: userMsg });
+  } else {
+    messages.push({
+      role: 'user',
+      content: `Story ka context:\n\n${storyContext}`
+    });
+    messages.push({
+      role: 'assistant',
+      content: '[Story continues...]'
+    });
+    let nextInstruction = `Story continue karo. Agli part likho (200-280 words). Cliffhanger pe khatam karo.`;
+    if (hint) nextInstruction = `Story continue karo with this direction: "${hint}"\n\n200-280 words. Cliffhanger pe khatam karo.`;
+    messages.push({ role: 'user', content: nextInstruction });
+  }
+
+  // Create chunk element with streaming
+  const chunkEl = createChunkEl(state.storyChunks.length + 1);
+  const textEl = chunkEl.querySelector('.chunk-text');
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor-blink';
+  textEl.appendChild(cursor);
+  scrollToBottom();
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`,
+        'HTTP-Referer': 'https://kaali-raat.studio',
+        'X-Title': 'Kaali Raat Studio',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages
+        ],
+        max_tokens: 600,
+        temperature: 0.88,
+        stream: true,
+      })
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error?.message || `HTTP ${res.status}`);
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            fullText += delta;
+            textEl.textContent = fullText;
+            textEl.appendChild(cursor);
+            scrollToBottom();
+          }
+        } catch {}
+      }
+    }
+
+    cursor.remove();
+    if (fullText.trim()) {
+      state.storyChunks.push({ text: fullText.trim(), hint: hint || '' });
+      wordCount = state.storyChunks.reduce((a,c) => a + c.text.split(/\s+/).length, 0);
+      updateWordCount();
+      save();
+      document.getElementById('promptInput').value = '';
+    }
+
+  } catch (err) {
+    cursor.remove();
+    textEl.textContent = '';
+    chunkEl.remove();
+    toast('❌ Error: ' + (err.message || 'API call fail hua'));
+    console.error(err);
+  }
+
+  isGenerating = false;
+  setBtnsLoading(false);
+  scrollToBottom();
+}
+
+function createChunkEl(num) {
+  const area = document.getElementById('storyArea');
+  // Remove placeholder
+  const placeholder = area.querySelector('div[style*="padding:40px"]');
+  if (placeholder) placeholder.remove();
+
+  const div = document.createElement('div');
+  div.className = 'story-chunk';
+  div.innerHTML = `
+    <div class="chunk-meta">
+      <span>📖</span> Part ${num}
+      ${num > 1 ? `<span style="margin-left:auto;font-size:10px;color:#333;">${getTimeStamp()}</span>` : ''}
+    </div>
+    <div class="chunk-text"></div>
+  `;
+  area.appendChild(div);
+  return div;
+}
+
+function getTimeStamp() {
+  return new Date().toLocaleTimeString('hi-IN', { hour: '2-digit', minute: '2-digit' });
+}
+
+function updateWordCount() {
+  const wc = state.storyChunks.reduce((a, c) => a + c.text.split(/\s+/).length, 0);
+  const pct = Math.min(100, (wc / TARGET_WORDS) * 100);
+  document.getElementById('wcFill').style.width = pct + '%';
+  document.querySelector('.wc-label').textContent = wc + ' words';
+  document.getElementById('wcTarget').textContent = '/ ~' + TARGET_WORDS;
+}
+
+function setBtnsLoading(loading) {
+  const btn = document.getElementById('continueBtn');
+  const sendBtn = document.getElementById('sendBtn');
+  if (loading) {
+    btn.disabled = true;
+    btn.classList.add('loading');
+    btn.innerHTML = '<div class="spinner"></div><span>Likh raha hai...</span>';
+    sendBtn.disabled = true;
+  } else {
+    btn.disabled = state.storyEnded;
+    btn.classList.remove('loading');
+    btn.innerHTML = state.storyEnded ? '✅ Story Khatam' : '<span>📖 Continue Karo</span>';
+    sendBtn.disabled = state.storyEnded;
+  }
+}
+
+function setPromptHint(text) {
+  document.getElementById('promptInput').value = text;
+  document.getElementById('promptInput').focus();
+}
+
+async function endStoryNow() {
+  if (isGenerating) return;
+  isGenerating = true;
+  setBtnsLoading(true);
+
+  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Story ka satisfying ending likho.`;
+  const storyContext = state.storyChunks.map((c, i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
+
+  const chunkEl = createChunkEl(state.storyChunks.length + 1);
+  const textEl = chunkEl.querySelector('.chunk-text');
+  chunkEl.querySelector('.chunk-meta').innerHTML = '<span>🩸</span> The End';
+  const cursor = document.createElement('span');
+  cursor.className = 'cursor-blink';
+  textEl.appendChild(cursor);
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`,
+        'HTTP-Referer': 'https://kaali-raat.studio',
+        'X-Title': 'Kaali Raat Studio',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Yeh story hai:\n\n${storyContext}\n\nAb is story ka ek powerful, scary, memorable ENDING likho. 200-250 words. "The End" ya "Samapt" jaisi line se band karo.`
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.85,
+        stream: true,
+      })
+    });
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const lines = decoder.decode(value).split('\n');
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const data = line.slice(6).trim();
+        if (data === '[DONE]') break;
+        try {
+          const json = JSON.parse(data);
+          const delta = json.choices?.[0]?.delta?.content || '';
+          if (delta) {
+            fullText += delta;
+            textEl.textContent = fullText;
+            textEl.appendChild(cursor);
+            scrollToBottom();
+          }
+        } catch {}
+      }
+    }
+    cursor.remove();
+    if (fullText.trim()) {
+      state.storyChunks.push({ text: fullText.trim(), hint: 'END' });
+      updateWordCount();
+    }
+  } catch (err) {
+    cursor.remove();
+    textEl.textContent = 'Story yahan khatam hoti hai... 🩸';
+  }
+
+  state.storyEnded = true;
+  isGenerating = false;
+  setBtnsLoading(false);
+  document.getElementById('endBanner').classList.add('show');
+  save();
+  saveCurrentEpisode(true);
+  scrollToBottom();
+}
+
+// ══ SCROLL ══
+function scrollToBottom() {
+  const area = document.getElementById('storyArea');
+  area.scrollTop = area.scrollHeight;
+}
+
+document.getElementById('storyArea').addEventListener('scroll', function () {
+  const fab = document.getElementById('scrollFab');
+  const diff = this.scrollHeight - this.scrollTop - this.clientHeight;
+  fab.classList.toggle('visible', diff > 200);
+});
+
+// ══ SAVE EPISODE ══
+function saveCurrentEpisode(silent = false) {
+  if (!state.storyChunks.length) return;
+  const eps = getEpisodes();
+  const fullStory = state.storyChunks.map(c => c.text).join('\n\n');
+  const wc = fullStory.split(/\s+/).length;
+  const ep = {
+    id: state.currentEpId || Date.now().toString(),
+    epNum: state.epNum,
+    season: state.season,
+    title: state.title,
+    channel: state.channel,
+    wordCount: wc,
+    chunks: state.storyChunks.length,
+    ended: state.storyEnded,
+    savedAt: Date.now(),
+    story: fullStory,
+    prompt: state.prompt,
+  };
+  const idx = eps.findIndex(e => e.id === ep.id);
+  if (idx !== -1) eps[idx] = ep;
+  else eps.push(ep);
+  saveEpisodes(eps);
+  if (!silent) toast('💾 Episode saved!');
+}
+
+function renderSetupEpList() {
+  const eps = getEpisodes().reverse();
+  const list = document.getElementById('setupEpList');
+  const badge = document.getElementById('epCountBadge');
+  badge.textContent = eps.length ? eps.length + ' episodes' : '';
+
+  if (!eps.length) {
+    list.innerHTML = '<div class="ep-empty">Koi episode save nahi hua abhi</div>';
+    return;
+  }
+
+  list.innerHTML = eps.map(ep => `
+    <div class="ep-row ${ep.id === state.currentEpId ? 'current' : ''}" onclick="loadEpisode('${ep.id}')">
+      <div class="ep-row-info">
+        <div class="ep-row-num">${ep.epNum} · ${ep.season} ${ep.ended ? '✅' : '🔄'}</div>
+        <div class="ep-row-title">${ep.title}</div>
+        <div class="ep-row-words">${ep.wordCount} words · ${ep.chunks} parts</div>
+      </div>
+      <button class="ep-row-del" onclick="deleteEpisode(event,'${ep.id}')">✕</button>
+    </div>
+  `).join('');
+}
+
+function loadEpisode(id) {
+  const eps = getEpisodes();
+  const ep = eps.find(e => e.id === id);
+  if (!ep) return;
+
+  state.currentEpId = id;
+  state.epNum = ep.epNum;
+  state.season = ep.season;
+  state.title = ep.title;
+  state.channel = ep.channel;
+  state.prompt = ep.prompt || '';
+  state.storyChunks = ep.story
+    ? ep.story.split('\n\n').filter(Boolean).map(t => ({ text: t }))
+    : [];
+  state.storyEnded = ep.ended || false;
+  save();
+
+  // Restore form
+  document.getElementById('cfgEp').value = ep.epNum;
+  document.getElementById('cfgTitle').value = ep.title;
+  document.getElementById('cfgChannel').value = ep.channel;
+  document.getElementById('cfgSeason').value = ep.season;
+  document.getElementById('cfgPrompt').value = ep.prompt || '';
+
+  // Rebuild story area
+  document.getElementById('storyArea').innerHTML = '';
+  state.storyChunks.forEach((chunk, i) => {
+    const el = createChunkEl(i + 1);
+    el.querySelector('.chunk-text').textContent = chunk.text;
+  });
+  wordCount = state.storyChunks.reduce((a, c) => a + c.text.split(/\s+/).length, 0);
+  updateWordCount();
+
+  if (state.storyEnded) {
+    document.getElementById('endBanner').classList.add('show');
+    setBtnsLoading(false);
+    document.getElementById('continueBtn').disabled = true;
+    document.getElementById('continueBtn').innerHTML = '✅ Story Khatam';
+  }
+
+  document.getElementById('topbarEp').textContent = ep.epNum + ' · ' + ep.title;
+  showScreen('screenStory');
+}
+
+function deleteEpisode(e, id) {
+  e.stopPropagation();
+  let eps = getEpisodes().filter(ep => ep.id !== id);
+  saveEpisodes(eps);
+  if (state.currentEpId === id) state.currentEpId = null;
+  renderSetupEpList();
+  toast('🗑 Episode deleted');
+}
+
+// ══ THUMBNAIL ══
+let thumbColor = '#cc0000';
+
+function initThumb() {
+  document.getElementById('tnInTitle').value = state.title;
+  document.getElementById('tnInSub').value = '';
+  document.getElementById('tnChanText').textContent = state.channel;
+  document.getElementById('tnBadgeText').textContent = state.epNum;
+  document.getElementById('tnSeasonText').textContent = state.season;
+  document.getElementById('tnMainTitle').textContent = state.title;
+  updateThumb();
+}
+
+function updateThumb() {
+  const title = document.getElementById('tnInTitle').value || state.title;
+  const sub = document.getElementById('tnInSub').value || '';
+  const bg = document.getElementById('tnInBg').value;
+
+  document.getElementById('tnMainTitle').textContent = title;
+  document.getElementById('tnMainTitle').style.fontSize =
+    title.length > 22 ? '64px' : title.length > 16 ? '78px' : '90px';
+  document.getElementById('tnSubTitle').textContent = sub;
+
+  applyThumbBg(bg, thumbColor);
+}
+
+function setThumbColor(el) {
+  document.querySelectorAll('.cswatch').forEach(s => s.classList.remove('active'));
+  el.classList.add('active');
+  thumbColor = el.dataset.c;
+  updateThumb();
+}
+
+function applyThumbBg(style, c) {
+  const dark = shadeColor(c, -50);
+  const bright = shadeColor(c, 50);
+
+  // Gradient
+  document.getElementById('tnGrad').style.background =
+    `radial-gradient(ellipse 70% 60% at 50% 30%, ${hexA(c,0.2)} 0%, #000 70%)`;
+
+  // Moon
+  const moon = document.getElementById('tnMoon');
+  const moonCfg = {
+    graveyard: { top:55, left:880, size:100 },
+    haunted:   { top:75, left:160, size:80 },
+    forest:    { top:45, left:620, size:90 },
+    void:      { top:-200, left:-200, size:0 },
+  }[style] || {};
+  moon.style.cssText = `
+    position:absolute;
+    width:${moonCfg.size}px;height:${moonCfg.size}px;
+    top:${moonCfg.top}px;left:${moonCfg.left}px;
+    border-radius:50%;
+    background:radial-gradient(circle,#fff8ee 0%,#ffd0a0 40%,${hexA(c,0.35)} 70%,transparent 100%);
+    animation:moonPulse 4s ease-in-out infinite alternate;
+    z-index:4;
+  `;
+
+  // Trees
+  const treesEl = document.getElementById('tnTrees');
+  if (style === 'void') {
+    treesEl.innerHTML = '';
+  } else {
+    const tc = style === 'forest' ? '#001500' : '#060000';
+    treesEl.innerHTML = `
+      <svg width="1280" height="340" viewBox="0 0 1280 340" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+        ${mkTrees(0,560,9,tc)}${mkTrees(720,1280,9,tc)}
+        <rect x="0" y="305" width="1280" height="35" fill="${tc}"/>
+      </svg>`;
+  }
+
+  // Smoke
+  const smokeEl = document.getElementById('tnSmoke');
+  smokeEl.innerHTML = '';
+  [0,1,2,3,4].forEach(i => {
+    const d = document.createElement('div');
+    d.className = 'tn-smoke-layer';
+    d.style.cssText = `width:${320+i*90}px;height:${200+i*60}px;background:radial-gradient(circle,${hexA(c,0.055+i*0.01)} 0%,transparent 70%);left:${-60+i*220}px;bottom:${-20+i*35}px;animation-duration:${9+i*3}s;animation-delay:${-i*2}s;`;
+    smokeEl.appendChild(d);
+  });
+
+  // Eyes
+  const eyesEl = document.getElementById('tnEyes');
+  eyesEl.innerHTML = `
+    <div class="tn-eye" style="width:14px;height:14px;background:${bright};box-shadow:0 0 10px 5px ${hexA(bright,0.9)},0 0 30px 15px ${hexA(c,0.5)};"></div>
+    <div class="tn-eye" style="width:14px;height:14px;background:${bright};box-shadow:0 0 10px 5px ${hexA(bright,0.9)},0 0 30px 15px ${hexA(c,0.5)};animation-delay:0.6s;"></div>
+  `;
+
+  // Mist
+  document.getElementById('tnMist').style.background =
+    `linear-gradient(to top,${hexA(c,0.38)} 0%,${hexA(c,0.1)} 55%,transparent 100%)`;
+
+  // Badge + channel color
+  document.getElementById('tnBadgeText').style.background = c;
+  document.getElementById('tnBadgeText').style.boxShadow = `0 0 20px ${hexA(c,0.8)}`;
+  document.getElementById('tnChanText').style.color = bright;
+  document.getElementById('tnChanText').style.textShadow = `0 0 15px ${c}, 0 0 40px ${hexA(c,0.5)}, 2px 2px 0 #000`;
+  document.getElementById('tnSeasonText').style.color = hexA(c, 0.7);
+  document.getElementById('tnMainTitle').style.textShadow =
+    `0 0 30px ${hexA(c,0.9)}, 0 0 60px ${hexA(c,0.5)}, 3px 3px 0 ${dark}, -2px -2px 0 #000, 5px 5px 16px #000`;
+
+  // Cracks
+  document.querySelectorAll('#tnCracks path').forEach(p => p.setAttribute('stroke', c));
+  // Corners
+  ['tnC1','tnC2','tnC3','tnC4'].forEach(id => {
+    document.querySelectorAll(`#${id} path`).forEach(p => p.setAttribute('fill', c));
+  });
+
+  // Figure
+  buildThumbFigure(c, dark);
+
+  // Drips
+  const dripsEl = document.getElementById('tnDrips');
+  dripsEl.innerHTML = '';
+  [30,14,50,10,38,58,22,44,12,55,28,18,42,24,36,48,8,32,52,20,16,46].forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'tn-drip';
+    d.style.cssText = `--dh:${h}px;height:${h}px;width:${4+Math.random()*5}px;background:linear-gradient(to bottom,${dark} 0%,${c} 60%,${hexA(c,0)} 100%);animation-duration:${2+Math.random()*3}s;animation-delay:${-Math.random()*3}s;flex-shrink:0;`;
+    dripsEl.appendChild(d);
+  });
+
+  scaleThumb();
+}
+
+function mkTrees(x0, x1, n, col) {
+  let s = '';
+  const w = x1 - x0;
+  for (let i = 0; i < n; i++) {
+    const x = x0 + (w * i / n) + Math.random() * (w / n * 0.5);
+    const h = 180 + Math.random() * 140;
+    const tw = 20 + Math.random() * 28;
+    s += `<rect x="${x}" y="${340 - h}" width="${tw * 0.3}" height="${h}" fill="${col}"/>`;
+    s += `<path d="M${x-tw} ${340-h*0.5} L${x+tw*0.15} ${340-h*0.92} L${x+tw} ${340-h*0.55} Z" fill="${col}"/>`;
+    s += `<path d="M${x-tw*0.7} ${340-h*0.33} L${x+tw*0.15} ${340-h*0.68} L${x+tw*0.8} ${340-h*0.38} Z" fill="${col}"/>`;
+  }
+  return s;
+}
+
+function buildThumbFigure(c, dark) {
+  document.getElementById('tnFigure').innerHTML = `
+    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="tg" cx="50%" cy="20%" r="60%">
+          <stop offset="0%" stop-color="${hexA(c,0.65)}"/>
+          <stop offset="100%" stop-color="#000"/>
+        </radialGradient>
+        <filter id="tb"><feGaussianBlur stdDeviation="3"/></filter>
+      </defs>
+      <ellipse cx="200" cy="290" rx="145" ry="270" fill="${hexA(c,0.1)}" filter="url(#tb)"/>
+      <path d="M200 55 C225 55 248 72 252 96 C262 114 256 138 253 156 C278 168 292 186 286 220 C280 250 264 262 252 280 C270 292 290 310 294 350 C306 405 300 460 288 508 C276 552 258 582 246 598 L200 600 L154 598 C142 582 124 552 112 508 C100 460 94 405 106 350 C110 310 130 292 148 280 C136 262 120 250 114 220 C108 186 122 168 147 156 C144 138 138 114 148 96 C152 72 175 55 200 55Z" fill="url(#tg)"/>
+      <ellipse cx="200" cy="38" rx="42" ry="50" fill="#0a0000"/>
+      <path d="M158 24 C162 -4 238 -4 242 24 C250 52 232 72 200 74 C168 72 150 52 158 24Z" fill="#060000" opacity="0.97"/>
+      <path d="M108 210 C90 205 72 198 60 190 C48 182 42 173 45 164 C47 157 55 154 65 158 C58 152 58 143 65 141 C72 139 80 144 83 151 C80 144 83 135 90 134 C97 133 103 139 104 147 C101 140 106 132 113 132 C120 132 123 139 122 147 C130 139 138 140 141 146 C147 154 142 166 134 172 C124 180 115 192 108 210Z" fill="${hexA(c,0.5)}"/>
+    </svg>`;
+  document.getElementById('tnFigure').style.filter =
+    `drop-shadow(0 0 28px ${hexA(c,0.65)}) drop-shadow(0 0 65px ${hexA(c,0.3)})`;
+}
+
+function scaleThumb() {
+  const wrap = document.getElementById('tnWrap');
+  const canvas = document.getElementById('tnCanvas');
+  const w = wrap.clientWidth;
+  const scale = w / 1280;
+  canvas.style.transform = `scale(${scale})`;
+  canvas.style.transformOrigin = 'top left';
+  wrap.style.height = (720 * scale) + 'px';
+}
+
+// AI Tagline
+async function autoGenerateTagline() {
+  if (!state.apiKey || state.apiKey === 'YOUR_OPENROUTER_API_KEY_HERE') { toast('⚠️ API key set nahi hai'); return; }
+  const btn = document.getElementById('aiTaglineBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Generate ho raha hai...';
+
+  try {
+    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${state.apiKey}`,
+        'HTTP-Referer': 'https://kaali-raat.studio',
+        'X-Title': 'Kaali Raat Studio',
+      },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        messages: [{
+          role: 'user',
+          content: `Horror YouTube thumbnail ke liye ek short, scary Hindi tagline do story "${state.title}" ke liye. Sirf ek line, 5-8 words, dramatic aur creepy honi chahiye. Sirf tagline likho, kuch aur nahi.`
+        }],
+        max_tokens: 60,
+        temperature: 0.9,
+      })
+    });
+    const data = await res.json();
+    const tagline = data.choices?.[0]?.message?.content?.trim().replace(/^["']|["']$/g,'') || '';
+    if (tagline) {
+      document.getElementById('tnInSub').value = tagline;
+      document.getElementById('tnSubTitle').textContent = tagline;
+      toast('✅ Tagline ready!');
+    }
+  } catch (err) {
+    toast('❌ ' + err.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🤖 AI se Tagline Generate Karo';
+}
+
+function printThumb() { window.print(); }
+
+// ══ COLOR UTILS ══
+function hexA(hex, a) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+function shadeColor(hex, amt) {
+  let r = Math.min(255,Math.max(0,parseInt(hex.slice(1,3),16)+amt));
+  let g = Math.min(255,Math.max(0,parseInt(hex.slice(3,5),16)+amt));
+  let b = Math.min(255,Math.max(0,parseInt(hex.slice(5,7),16)+amt));
+  return '#'+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0');
+}
+
+// ══ TOAST ══
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ══ INIT ══
+window.addEventListener('load', () => {
+  load();
+  restoreSetupForm();
+  renderSetupEpList();
+  window.addEventListener('resize', scaleThumb);
+});
+</script>
+</body>
+</html>
