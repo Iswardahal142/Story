@@ -877,6 +877,45 @@ html, body {
   font-size: 13px;
 }
 
+/* Image Prompt Box */
+.img-prompt-box {
+  background: #0a0a00;
+  border: 1px solid #333300;
+  border-radius: 8px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+.img-prompt-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--ember);
+}
+.img-prompt-text {
+  font-size: 12px;
+  color: #c8b870;
+  line-height: 1.6;
+  font-family: monospace;
+}
+.img-copy-btn {
+  background: #1a1a00;
+  border: 1px solid #444400;
+  color: var(--ember);
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: all 0.15s;
+}
+.img-copy-btn:hover {
+  background: #2a2a00;
+  border-color: var(--ember);
+}
+
 .scroll-fab {
   position: fixed;
   bottom: 160px;
@@ -1033,6 +1072,14 @@ html, body {
       🎃 Story Likhna Shuru Karo
     </button>
 
+    <!-- Link Previous Season -->
+    <div class="card-block" id="linkSeasonBlock" style="display:none;">
+      <div class="card-title">🔗 Previous Season Link</div>
+      <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">Pichle season se characters aur story consistent rahegi.</div>
+      <div id="linkSeasonList"></div>
+      <button class="btn btn-ghost" style="font-size:12px;" onclick="clearLinkedSeason()">✕ Link Hatao</button>
+    </div>
+
     <!-- Saved Episodes -->
     <div class="ep-list-section" id="savedEpSection">
       <div class="ep-list-header">
@@ -1111,12 +1158,14 @@ html, body {
   <!-- End story banner -->
   <div class="end-banner" id="endBanner" style="margin:0 16px 16px;">
     <div class="end-banner-title">🩸 The End 🩸</div>
-    <div class="end-banner-sub">Story complete! Ab thumbnail banao ya naya episode shuru karo.</div>
-    <div class="btn-row">
-      <button class="btn btn-primary" onclick="goToThumb()">🎨 Thumbnail Banao</button>
+    <div class="end-banner-sub">Story complete! Ab kya karna hai?</div>
+    <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
+      <button class="btn btn-primary" onclick="goToThumb()">🎨 Thumbnail</button>
       <button class="btn btn-ghost" onclick="goToAnalysis()">🔍 Scene & Characters</button>
-      <button class="btn btn-ghost" onclick="goToSetup()">+ Naya Episode</button>
+      <button class="btn btn-ghost" id="bibleBtn" onclick="generateSeasonBible()">📖 Season Bible Banao</button>
+      <button class="btn btn-ghost" onclick="startNextSeason()">➡️ Next Season</button>
     </div>
+    <div id="bibleOutput" style="display:none;background:#0a000a;border:1px solid #440044;border-radius:8px;padding:12px;font-size:12px;color:#cc88ff;line-height:1.7;text-align:left;"></div>
   </div>
 
 </div>
@@ -1310,6 +1359,8 @@ let state = {
   thumbColor: '#cc0000',
   thumbBg: 'graveyard',
   currentEpId: null,
+  seasonBible: null,       // Generated after season ends
+  linkedSeasonId: null,    // Previous season episode ID for continuity
 };
 
 // ══ PERSIST ══
@@ -1350,6 +1401,7 @@ function restoreSetupForm() {
   document.getElementById('cfgEp').value = state.epNum;
   document.getElementById('cfgTitle').value = state.title;
   document.getElementById('cfgPrompt').value = state.prompt;
+  renderLinkSeasonBlock();
 }
 
 // ══ PRESETS ══
@@ -1371,6 +1423,10 @@ async function startStudio() {
   state.storyChunks = [];
   state.storyEnded = false;
   state.currentEpId = Date.now().toString();
+  // Keep seasonBible and linkedSeasonId if coming from Next Season flow
+  if (!state.linkedSeasonId) {
+    state.seasonBible = null;
+  }
   save();
 
   document.getElementById('topbarEp').textContent = state.epNum + ' · ' + state.title;
@@ -1407,7 +1463,12 @@ RULES:
 - Story TAB TAK continue karni hai jab tak "STORY END KARO" instruction na mile
 - Kabhi bhi khud story end mat karo — sirf continue karo aur ek hook pe chhodo
 - Dialogues include karo jahan zarurat ho
-- 2D cartoon animation ke liye visual scenes describe karo`;
+- 2D cartoon animation ke liye visual scenes describe karo${state.seasonBible ? `
+
+PREVIOUS SEASON CONTINUITY (MUST FOLLOW):
+${state.seasonBible}
+
+Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season mein consistently follow karo. Characters ki personality, appearance, aur relationships same rahni chahiye.` : ''}`;
 
   // Build conversation history
   const messages = [];
@@ -1665,16 +1726,14 @@ async function generateScenes() {
   try {
     const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
         messages: [{
           role: 'user',
-          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story ko scene-by-scene breakdown do. Har scene ke liye EXACTLY yeh format use karo, kuch aur mat likho:\n\nSCENE_START\nnum: 1\ntitle: Scene ka naam\nlocation: Kahan ho raha hai\nmood: Atmosphere (e.g. Daravna, Suspenseful, Calm, Creepy)\nwhat: Kya hua is scene mein (1-2 lines)\nSCENE_END\n\nHar scene ke liye yahi format. Sirf yeh format, koi introduction ya explanation nahi.`
+          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story ko scene-by-scene breakdown do. Har scene ke liye EXACTLY yeh format use karo:\n\nSCENE_START\nnum: 1\ntitle: Scene ka naam\nlocation: Kahan ho raha hai\nmood: Daravna / Suspenseful / Creepy / Intense\nwhat: Kya hua is scene mein (1-2 lines)\nimgprompt: [English only] Detailed image generation prompt for this scene. 2D horror animation style, cel-shaded, dark atmospheric lighting. Describe: setting, time of night, key visual elements, character positions if any, color palette, mood. Do not mention any character names.\nSCENE_END\n\nSirf yeh format, koi introduction ya explanation nahi.`
         }],
-        max_tokens: 1200,
+        max_tokens: 2000,
         temperature: 0.4,
       })
     });
@@ -1694,6 +1753,12 @@ async function generateScenes() {
             <span class="scene-tag">🎭 ${s.mood}</span>
           </div>
           <div class="scene-desc">${s.what}</div>
+          ${s.imgprompt ? `
+          <div class="img-prompt-box">
+            <div class="img-prompt-label">🎨 Image Generation Prompt</div>
+            <div class="img-prompt-text">${s.imgprompt}</div>
+            <button class="img-copy-btn" onclick="copyPrompt(this, \`${s.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
+          </div>` : ''}
         </div>
       `).join('');
     }
@@ -1712,18 +1777,18 @@ function parseScenes(raw) {
     const end = block.indexOf('SCENE_END');
     const text = end > -1 ? block.slice(0, end) : block;
     const get = (key) => {
-      const match = text.match(new RegExp(key + ':\\s*(.+)'));
+      const match = text.match(new RegExp(key + ':\\s*([\\s\\S]+?)(?=\\n\\w+:|$)'));
       return match ? match[1].trim() : '';
     };
-    const num = get('num');
     const title = get('title');
     if (!title) continue;
     scenes.push({
-      num: num || scenes.length + 1,
+      num: get('num') || scenes.length + 1,
       title,
       location: get('location') || '—',
       mood: get('mood') || '—',
       what: get('what') || '—',
+      imgprompt: get('imgprompt') || '',
     });
   }
   return scenes;
@@ -1743,16 +1808,14 @@ async function generateCharacters() {
   try {
     const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
         messages: [{
           role: 'user',
-          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story mein jo bhi characters hain unki list banao. Har character ke liye EXACTLY yeh format use karo:\n\nCHAR_START\nname: Character ka naam\nrole: Protagonist / Antagonist / Supporting / Supernatural\ndescription: Kaisa dikhta/dikhti hai, uski personality (2-3 lines)\nappearance: Story mein pehli baar kab aaya/aayi (ek line)\nCHAR_END\n\nSirf yeh format, koi extra text nahi.`
+          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story mein jo bhi characters hain unki list banao. Har character ke liye EXACTLY yeh format use karo:\n\nCHAR_START\nname: Character ka naam\nrole: Protagonist / Antagonist / Supporting / Supernatural\ndescription: Kaisa dikhta/dikhti hai, uski personality (2-3 lines)\nappearance: Story mein pehli baar kab aaya/aayi (ek line)\nimgprompt: [English only] Detailed image generation prompt for THIS character only. 2D horror animation style, cel-shaded. Describe: physical appearance (age, build, face, hair, eyes, skin), clothing, expression, pose, background hint. Make it detailed for consistent character art.\nCHAR_END\n\nSirf yeh format, koi extra text nahi.`
         }],
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.4,
       })
     });
@@ -1765,7 +1828,17 @@ async function generateCharacters() {
     if (!chars.length) {
       out.innerHTML = '<div class="analysis-empty">Characters parse nahi ho paye. Dobara try karo.</div>';
     } else {
-      out.innerHTML = chars.map(c => `
+      // Build combined "all characters in one frame" prompt
+      const allDesc = chars.map(c => `${c.name} (${c.role}): ${c.imgprompt || c.description}`).join(' | ');
+      const combinedPrompt = `Group illustration of all characters together in one frame, 2D horror animation style, cel-shaded, dark atmospheric background. Characters: ${allDesc}. Each character labeled with their name below. Horror anime art style, detailed character design.`;
+
+      out.innerHTML = `
+        <div class="img-prompt-box" style="border-color:#8800cc33;background:#0d0015;">
+          <div class="img-prompt-label" style="color:#cc88ff;">🎭 All Characters — Group Frame Prompt</div>
+          <div class="img-prompt-text">${combinedPrompt}</div>
+          <button class="img-copy-btn" onclick="copyPrompt(this, \`${combinedPrompt.replace(/`/g,"'")}\`)">📋 Copy All</button>
+        </div>
+        ${chars.map(c => `
         <div class="char-card">
           <div class="char-name">
             ${roleEmoji[c.role] || '👤'} ${c.name}
@@ -1773,8 +1846,15 @@ async function generateCharacters() {
           </div>
           <div class="char-desc">${c.description}</div>
           <div class="char-appear">📍 ${c.appearance}</div>
+          ${c.imgprompt ? `
+          <div class="img-prompt-box">
+            <div class="img-prompt-label">🎨 Character Image Prompt</div>
+            <div class="img-prompt-text">${c.imgprompt}</div>
+            <button class="img-copy-btn" onclick="copyPrompt(this, \`${c.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
+          </div>` : ''}
         </div>
-      `).join('');
+        `).join('')}
+      `;
     }
   } catch (err) {
     out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
@@ -1791,7 +1871,7 @@ function parseCharacters(raw) {
     const end = block.indexOf('CHAR_END');
     const text = end > -1 ? block.slice(0, end) : block;
     const get = (key) => {
-      const match = text.match(new RegExp(key + ':\\s*(.+)'));
+      const match = text.match(new RegExp(key + ':\\s*([\\s\\S]+?)(?=\\n\\w+:|$)'));
       return match ? match[1].trim() : '';
     };
     const name = get('name');
@@ -1801,9 +1881,117 @@ function parseCharacters(raw) {
       role: get('role') || 'Supporting',
       description: get('description') || '—',
       appearance: get('appearance') || '—',
+      imgprompt: get('imgprompt') || '',
     });
   }
   return chars;
+}
+
+function copyPrompt(btn, text) {
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => btn.textContent = '📋 Copy', 2000);
+  }).catch(() => {
+    toast('❌ Copy nahi hua, manually select karo');
+  });
+}
+
+// ══ SEASON BIBLE ══
+async function generateSeasonBible() {
+  const btn = document.getElementById('bibleBtn');
+  const out = document.getElementById('bibleOutput');
+  if (!state.storyChunks.length) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Bible ban raha hai...';
+  out.style.display = 'block';
+  out.innerHTML = '⏳ AI poori season analyze kar raha hai...';
+
+  const storyText = state.storyChunks.map(c => c.text).join('\n\n');
+
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        messages: [{
+          role: 'user',
+          content: `Yeh ${state.season} ki horror story hai titled "${state.title}":\n\n${storyText}\n\nIs story ka ek detailed SEASON BIBLE banao jo next season ke writer ko diya jayega taaki story consistent rahe. Include:\n\n1. CHARACTERS: Har character ka naam, appearance, personality, story mein unka role, kya hua unke saath\n2. MAIN PLOT: Season ki main story kya thi, major events\n3. UNRESOLVED MYSTERIES: Jo raaz abhi bhi baaki hain\n4. CLIFFHANGER: Season ka ending cliffhanger kya tha\n5. WORLD RULES: Is horror universe ke rules (ghost ke powers, location details, etc)\n6. NEXT SEASON HOOKS: Kya hona chahiye next season mein\n\nHindi mein likho. Detailed aur specific raho.`
+        }],
+        max_tokens: 1500,
+        temperature: 0.3,
+      })
+    });
+    const data = await res.json();
+    const bible = data.choices?.[0]?.message?.content || '';
+    if (bible) {
+      state.seasonBible = bible;
+      save();
+      saveCurrentEpisode(true);
+      out.innerHTML = bible.replace(/\n/g, '<br>');
+      toast('📖 Season Bible ready! Next season mein use hoga.');
+    }
+  } catch (err) {
+    out.innerHTML = `❌ Error: ${err.message}`;
+  }
+  btn.disabled = false;
+  btn.innerHTML = '📖 Season Bible Banao';
+}
+
+function startNextSeason() {
+  // Save current season ID for linking
+  const prevSeasonId = state.currentEpId;
+  const prevSeason = state.season;
+  const prevBible = state.seasonBible;
+
+  if (!prevBible) {
+    toast('⚠️ Pehle Season Bible banao!');
+    return;
+  }
+
+  // Reset for new season
+  state.storyChunks = [];
+  state.storyEnded = false;
+  state.currentEpId = null;
+  state.linkedSeasonId = prevSeasonId;
+  // seasonBible stays — it will be used in sendContinue
+
+  // Auto-increment season number
+  const seasonMatch = prevSeason.match(/(\d+)/);
+  const nextNum = seasonMatch ? parseInt(seasonMatch[1]) + 1 : 2;
+  state.season = `SEASON ${nextNum}`;
+  state.epNum = 'EP 01';
+
+  save();
+  showScreen('screenSetup');
+  restoreSetupForm();
+  renderLinkSeasonBlock();
+  toast(`🎬 Season ${nextNum} ready! Bible linked hai.`);
+}
+
+function renderLinkSeasonBlock() {
+  const block = document.getElementById('linkSeasonBlock');
+  const list = document.getElementById('linkSeasonList');
+
+  if (state.linkedSeasonId && state.seasonBible) {
+    block.style.display = 'block';
+    const eps = getEpisodes();
+    const linked = eps.find(e => e.id === state.linkedSeasonId);
+    list.innerHTML = linked
+      ? `<div style="font-size:12px;color:var(--green);padding:8px 0;">✅ Linked: ${linked.season} — "${linked.title}"</div>`
+      : `<div style="font-size:12px;color:var(--bone-dim);">Linked season</div>`;
+  } else {
+    block.style.display = 'none';
+  }
+}
+
+function clearLinkedSeason() {
+  state.linkedSeasonId = null;
+  state.seasonBible = null;
+  save();
+  renderLinkSeasonBlock();
+  toast('🔗 Season link hata diya');
 }
 
 // ══ SCROLL ══
@@ -1836,6 +2024,8 @@ function saveCurrentEpisode(silent = false) {
     savedAt: Date.now(),
     story: fullStory,
     prompt: state.prompt,
+    seasonBible: state.seasonBible || null,
+    linkedSeasonId: state.linkedSeasonId || null,
   };
   const idx = eps.findIndex(e => e.id === ep.id);
   if (idx !== -1) eps[idx] = ep;
@@ -1882,6 +2072,8 @@ function loadEpisode(id) {
     ? ep.story.split('\n\n').filter(Boolean).map(t => ({ text: t }))
     : [];
   state.storyEnded = ep.ended || false;
+  state.seasonBible = ep.seasonBible || null;
+  state.linkedSeasonId = ep.linkedSeasonId || null;
   save();
 
   // Restore form
