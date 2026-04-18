@@ -1298,9 +1298,8 @@ html, body {
 <script>
 // ══ STATE ══
 const SK = 'kaali_raat_v2';
-const HARDCODED_KEY = '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'; // <-- Yahan apni key daalo
 let state = {
-  apiKey: HARDCODED_KEY,
+  apiKey: '',
   channel: 'KAALI RAAT',
   season: 'SEASON 1',
   epNum: 'EP 01',
@@ -1346,7 +1345,6 @@ function goToSetup() {
 }
 function goToThumb() { showScreen('screenThumb'); }
 function restoreSetupForm() {
-  state.apiKey = HARDCODED_KEY;
   document.getElementById('cfgChannel').value = state.channel;
   document.getElementById('cfgSeason').value = state.season;
   document.getElementById('cfgEp').value = state.epNum;
@@ -1365,9 +1363,6 @@ document.querySelectorAll('#presetChips .chip').forEach(c => {
 
 // ══ START ══
 async function startStudio() {
-  state.apiKey = HARDCODED_KEY;
-  const key = state.apiKey;
-  if (!key || key === 'YOUR_OPENROUTER_API_KEY_HERE') { toast('⚠️ API key set nahi hai! File mein HARDCODED_KEY update karo.'); return; }
   state.channel = document.getElementById('cfgChannel').value.trim() || 'KAALI RAAT';
   state.season = document.getElementById('cfgSeason').value.trim() || 'SEASON 1';
   state.epNum = document.getElementById('cfgEp').value.trim() || 'EP 01';
@@ -1444,13 +1439,10 @@ RULES:
   scrollToBottom();
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`,
-        'HTTP-Referer': 'https://kaali-raat.studio',
-        'X-Title': 'Kaali Raat Studio',
       },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
@@ -1584,13 +1576,10 @@ async function endStoryNow() {
   textEl.appendChild(cursor);
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`,
-        'HTTP-Referer': 'https://kaali-raat.studio',
-        'X-Title': 'Kaali Raat Studio',
       },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
@@ -1674,13 +1663,10 @@ async function generateScenes() {
   const storyText = state.storyChunks.map(c => c.text).join('\n\n');
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`,
-        'HTTP-Referer': 'https://kaali-raat.studio',
-        'X-Title': 'Kaali Raat Studio',
       },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
@@ -1755,13 +1741,10 @@ async function generateCharacters() {
   const storyText = state.storyChunks.map(c => c.text).join('\n\n');
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`,
-        'HTTP-Referer': 'https://kaali-raat.studio',
-        'X-Title': 'Kaali Raat Studio',
       },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
@@ -2108,19 +2091,15 @@ function scaleThumb() {
 
 // AI Tagline
 async function autoGenerateTagline() {
-  if (!state.apiKey || state.apiKey === 'YOUR_OPENROUTER_API_KEY_HERE') { toast('⚠️ API key set nahi hai'); return; }
   const btn = document.getElementById('aiTaglineBtn');
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner"></div> Generate ho raha hai...';
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const res = await fetch('/api/ai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${state.apiKey}`,
-        'HTTP-Referer': 'https://kaali-raat.studio',
-        'X-Title': 'Kaali Raat Studio',
       },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
