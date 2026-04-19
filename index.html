@@ -1205,9 +1205,12 @@ html, body {
     </div>
     <div id="bibleOutput" style="display:none;background:#0a000a;border:1px solid #440044;border-radius:8px;padding:12px;font-size:12px;color:#cc88ff;line-height:1.7;text-align:left;"></div>
     <div id="narrationOutput" style="display:none;background:#000a00;border:1px solid #004400;border-radius:8px;padding:14px;margin-top:4px;">
-      <div style="font-size:10px;color:#44bb66;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🎙 Full Episode Narration — Hindi</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:10px;color:#44bb66;letter-spacing:2px;text-transform:uppercase;">🎙 Full Episode Narration — ElevenLabs Ready</div>
+        <button id="regenNarrationBtn" class="img-copy-btn" onclick="generateFullNarration(true)" style="display:none;font-size:10px;padding:4px 10px;border-color:#555;color:#888;">🔄 Dobara Banao</button>
+      </div>
       <div id="narrationText" style="font-size:14px;color:#c8e8c8;line-height:1.9;white-space:pre-wrap;"></div>
-      <button class="img-copy-btn" onclick="copyNarration()" style="margin-top:12px;border-color:#44bb66;color:#44bb66;">📋 Narration Copy Karo</button>
+      <button class="img-copy-btn" onclick="copyNarration()" style="margin-top:12px;border-color:#44bb66;color:#44bb66;">📋 ElevenLabs ke liye Copy Karo</button>
     </div>
   </div>
 
@@ -1325,6 +1328,7 @@ let state = {
   savedScenes: null,   // persisted scene breakdown
   savedChars: null,    // persisted character list
   characterBible: null, // auto-extracted character visual descriptions
+  savedNarration: null, // persisted ElevenLabs narration
 };
 
 // ══ PERSIST ══
@@ -2298,6 +2302,7 @@ function saveCurrentEpisode(silent = false) {
     linkedSeasonId: state.linkedSeasonId || null,
     savedScenes: state.savedScenes || null,
     savedChars: state.savedChars || null,
+    savedNarration: state.savedNarration || null,
   };
   const idx = eps.findIndex(e => e.id === ep.id);
   if (idx !== -1) eps[idx] = ep;
@@ -2364,6 +2369,7 @@ function loadEpisode(id) {
   state.linkedSeasonId = ep.linkedSeasonId || null;
   state.savedScenes = ep.savedScenes || null;
   state.savedChars = ep.savedChars || null;
+  state.savedNarration = ep.savedNarration || null;
   save();
 
   // Rebuild story area
@@ -2497,14 +2503,33 @@ async function generateThumbPrompt() {
 }
 
 // ══ FULL NARRATION GENERATOR (ElevenLabs Ready) ══
-async function generateFullNarration() {
+function renderNarration(narration, textEl) {
+  textEl.innerHTML = narration
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/&lt;break time="([^"]+)" \/&gt;/g, '<span style="background:#1a0033;color:#cc88ff;padding:1px 6px;border-radius:3px;font-size:11px;font-family:monospace;">&lt;break time="$1" /&gt;</span>');
+}
+
+async function generateFullNarration(forceRegenerate = false) {
   if (!state.storyChunks.length) { toast('⚠️ Story nahi hai!'); return; }
 
   const out = document.getElementById('narrationOutput');
   const textEl = document.getElementById('narrationText');
   out.style.display = 'block';
-  textEl.textContent = '';
 
+  // Agar already saved hai aur force regenerate nahi hai toh seedha dikhao
+  if (state.savedNarration && !forceRegenerate) {
+    renderNarration(state.savedNarration, textEl);
+    // Show regenerate button
+    const regenBtn = document.getElementById('regenNarrationBtn');
+    if (regenBtn) regenBtn.style.display = 'inline-flex';
+    out.scrollIntoView({ behavior: 'smooth' });
+    toast('✅ Saved narration load ho gayi!');
+    return;
+  }
+
+  textEl.textContent = '';
   textEl.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>ElevenLabs narration ban rahi hai...</div>';
 
   const fullStory = state.storyChunks.map(c => c.text).join('\n\n');
@@ -2542,12 +2567,12 @@ SIRF HINDI DEVANAGARI mein likho. Sirf ElevenLabs break tags allowed hain.`
     const narration = data.choices?.[0]?.message?.content?.trim() || '';
 
     if (narration) {
-      // Show with ElevenLabs tags highlighted in purple
-      textEl.innerHTML = narration
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/&lt;break time="([^"]+)" \/&gt;/g, '<span style="background:#1a0033;color:#cc88ff;padding:1px 6px;border-radius:3px;font-size:11px;font-family:monospace;">&lt;break time="$1" /&gt;</span>');
+      state.savedNarration = narration;
+      save();
+      saveCurrentEpisode(true);
+      renderNarration(narration, textEl);
+      const regenBtn = document.getElementById('regenNarrationBtn');
+      if (regenBtn) regenBtn.style.display = 'inline-flex';
       toast('✅ ElevenLabs Narration ready!');
       out.scrollIntoView({ behavior: 'smooth' });
     } else {
