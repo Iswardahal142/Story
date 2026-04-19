@@ -1042,6 +1042,177 @@ html, body {
   color:var(--bone-dim);
   white-space:nowrap;
 }
+
+/* ══ ELEVENLABS SIDEBAR ══ */
+.el-sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 300;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.el-sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+.el-sidebar {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 300px;
+  max-width: 90vw;
+  background: var(--panel);
+  border-left: 1px solid #330044;
+  z-index: 301;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.3s;
+  overflow-y: auto;
+}
+.el-sidebar.open { transform: translateX(0); }
+
+.el-sidebar-header {
+  padding: 16px;
+  border-bottom: 1px solid #330044;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #0d0015;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.el-sidebar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cc88ff;
+  letter-spacing: 1px;
+}
+
+.el-sidebar-body {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.el-api-card {
+  background: var(--panel2);
+  border: 1px solid #2a003a;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+.el-api-card.active-key {
+  border-color: #44bb66;
+  background: #001a00;
+}
+.el-api-card.exhausted {
+  border-color: #440000;
+  opacity: 0.6;
+}
+
+.el-api-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.el-api-key-text {
+  font-size: 12px;
+  color: #888;
+  font-family: monospace;
+  word-break: break-all;
+}
+.el-api-chars {
+  font-size: 11px;
+  color: var(--bone-dim);
+}
+.el-api-status {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.el-status-active { background: #003300; color: #44bb66; border: 1px solid #44bb66; }
+.el-status-waiting { background: #1a0033; color: #cc88ff; border: 1px solid #8800cc; }
+.el-status-exhausted { background: #220000; color: #cc4444; border: 1px solid #440000; }
+
+.el-add-form {
+  background: #0d0015;
+  border: 1px dashed #440066;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.el-add-input {
+  background: var(--panel2);
+  border: 1px solid #330044;
+  color: var(--bone);
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: monospace;
+  outline: none;
+  width: 100%;
+}
+.el-add-input:focus { border-color: #8800cc; }
+.el-add-input::placeholder { color: #444; }
+
+.el-chars-bar {
+  height: 4px;
+  background: #1a001a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 2px;
+}
+.el-chars-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s;
+}
+
+/* FAB button to open sidebar */
+.el-fab {
+  position: fixed;
+  bottom: 160px;
+  right: 16px;
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #6600aa, #330066);
+  border: 1px solid #8800cc;
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 18px;
+  z-index: 50;
+  box-shadow: 0 4px 16px rgba(100,0,180,0.5);
+  transition: all 0.2s;
+}
+.el-fab:hover { transform: scale(1.1); }
+.el-fab-badge {
+  position: absolute;
+  top: -4px; right: -4px;
+  background: #44bb66;
+  color: #000;
+  font-size: 9px;
+  font-weight: 900;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 </style>
 </head>
 <body>
@@ -1210,7 +1381,11 @@ html, body {
         <button id="regenNarrationBtn" class="img-copy-btn" onclick="generateFullNarration(true)" style="display:none;font-size:10px;padding:4px 10px;border-color:#555;color:#888;">🔄 Dobara Banao</button>
       </div>
       <div id="narrationText" style="font-size:14px;color:#c8e8c8;line-height:1.9;white-space:pre-wrap;"></div>
-      <button class="img-copy-btn" onclick="copyNarration()" style="margin-top:12px;border-color:#44bb66;color:#44bb66;">📋 ElevenLabs ke liye Copy Karo</button>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+        <button class="img-copy-btn" onclick="copyNarration()" style="border-color:#44bb66;color:#44bb66;">📋 Copy Karo</button>
+        <button class="img-copy-btn" id="elAudioBtn" onclick="generateElevenLabsAudio()" style="border-color:#8800cc;color:#cc88ff;background:#0d0015;">🎙 Audio Generate Karo</button>
+      </div>
+      <div id="elAudioOutput" style="display:none;margin-top:8px;"></div>
     </div>
   </div>
 
@@ -1355,6 +1530,7 @@ function showScreen(id) {
   });
   if (id === 'screenSetup') renderSetupEpList();
   if (id === 'screenStory') scrollToBottom();
+  updateElFab();
 }
 function goToSetup() {
   saveCurrentEpisode(true);
@@ -2592,6 +2768,223 @@ function copyNarration() {
   }).catch(() => toast('❌ Copy nahi hua'));
 }
 
+
+// ══ ELEVENLABS API KEY MANAGER ══
+const EL_SK = 'kaali_raat_el_keys';
+
+function getElKeys() {
+  try { return JSON.parse(localStorage.getItem(EL_SK)) || []; } catch { return []; }
+}
+function saveElKeys(keys) {
+  try { localStorage.setItem(EL_SK, JSON.stringify(keys)); } catch {}
+}
+
+function getActiveElKey() {
+  const keys = getElKeys();
+  // Return first non-exhausted key
+  return keys.find(k => !k.exhausted) || null;
+}
+
+function addElApiKey() {
+  const keyInput = document.getElementById('elNewKeyInput');
+  const nameInput = document.getElementById('elNewKeyName');
+  const key = keyInput.value.trim();
+  const name = nameInput.value.trim() || ('Account ' + (getElKeys().length + 1));
+  if (!key || !key.startsWith('sk_')) { toast('⚠️ Valid ElevenLabs key daalo (sk_ se shuru hoti hai)'); return; }
+  const keys = getElKeys();
+  if (keys.find(k => k.key === key)) { toast('⚠️ Yeh key already add hai!'); return; }
+  keys.push({ key, name, exhausted: false, charsUsed: 0, addedAt: Date.now() });
+  saveElKeys(keys);
+  keyInput.value = '';
+  nameInput.value = '';
+  renderElKeys();
+  toast('✅ API Key add ho gayi: ' + name);
+}
+
+function removeElKey(idx) {
+  const keys = getElKeys();
+  keys.splice(idx, 1);
+  saveElKeys(keys);
+  renderElKeys();
+  toast('🗑 Key removed');
+}
+
+function markElKeyExhausted(key) {
+  const keys = getElKeys();
+  const k = keys.find(k => k.key === key);
+  if (k) { k.exhausted = true; saveElKeys(keys); renderElKeys(); }
+}
+
+function markElKeyActive(idx) {
+  const keys = getElKeys();
+  if (keys[idx]) { keys[idx].exhausted = false; saveElKeys(keys); renderElKeys(); toast('✅ Key active kar di!'); }
+}
+
+function renderElKeys() {
+  const list = document.getElementById('elKeysList');
+  const activeInfo = document.getElementById('elActiveInfo');
+  const activeKeyName = document.getElementById('elActiveKeyName');
+  const badge = document.getElementById('elFabBadge');
+  if (!list) return;
+
+  const keys = getElKeys();
+  const activeKey = getActiveElKey();
+
+  // Update badge
+  const activeCount = keys.filter(k => !k.exhausted).length;
+  if (badge) badge.textContent = activeCount;
+
+  // Active key info
+  if (activeKey && activeInfo) {
+    activeInfo.style.display = 'block';
+    if (activeKeyName) activeKeyName.textContent = activeKey.name + ' — ' + activeKey.key.slice(0,8) + '...';
+  } else if (activeInfo) {
+    activeInfo.style.display = keys.length ? 'block' : 'none';
+    if (activeKeyName && !activeKey) activeKeyName.textContent = '⚠️ Saari keys exhausted!';
+  }
+
+  if (!keys.length) {
+    list.innerHTML = '<div style="text-align:center;padding:16px;color:#333;font-size:12px;">Koi key nahi — upar se add karo</div>';
+    return;
+  }
+
+  list.innerHTML = keys.map((k, i) => {
+    const isActive = activeKey && activeKey.key === k.key;
+    const pct = Math.min(100, (k.charsUsed / 10000) * 100);
+    const fillColor = pct > 80 ? '#cc4444' : pct > 50 ? '#ff7700' : '#44bb66';
+    return \`
+    <div class="el-api-card \${isActive ? 'active-key' : ''} \${k.exhausted ? 'exhausted' : ''}">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="el-api-label" style="color:\${isActive ? '#44bb66' : k.exhausted ? '#cc4444' : '#cc88ff'};">
+          \${isActive ? '✅' : k.exhausted ? '❌' : '⏳'} \${k.name}
+        </div>
+        <span class="el-api-status \${isActive ? 'el-status-active' : k.exhausted ? 'el-status-exhausted' : 'el-status-waiting'}">
+          \${isActive ? 'ACTIVE' : k.exhausted ? 'EXHAUSTED' : 'WAITING'}
+        </span>
+      </div>
+      <div class="el-api-key-text">\${k.key.slice(0,12)}••••••••</div>
+      <div class="el-chars-bar"><div class="el-chars-fill" style="width:\${pct}%;background:\${fillColor};"></div></div>
+      <div class="el-api-chars">\${k.charsUsed.toLocaleString()} / 10,000 chars used</div>
+      <div style="display:flex;gap:6px;margin-top:4px;">
+        \${k.exhausted ? \`<button class="img-copy-btn" onclick="markElKeyActive(\${i})" style="font-size:10px;padding:4px 10px;border-color:#44bb66;color:#44bb66;">🔄 Active Karo</button>\` : ''}
+        <button class="img-copy-btn" onclick="removeElKey(\${i})" style="font-size:10px;padding:4px 10px;border-color:#440000;color:#cc4444;">🗑 Remove</button>
+      </div>
+    </div>
+    \`;
+  }).join('');
+}
+
+function openElSidebar() {
+  renderElKeys();
+  document.getElementById('elSidebar').classList.add('open');
+  document.getElementById('elOverlay').classList.add('open');
+}
+function closeElSidebar() {
+  document.getElementById('elSidebar').classList.remove('open');
+  document.getElementById('elOverlay').classList.remove('open');
+}
+
+// Show/hide FAB based on screen
+function updateElFab() {
+  const fab = document.getElementById('elFab');
+  if (!fab) return;
+  const onStory = document.getElementById('screenStory')?.classList.contains('active');
+  const onAnalysis = document.getElementById('screenAnalysis')?.classList.contains('active');
+  fab.style.display = (onStory || onAnalysis) ? 'flex' : 'none';
+  renderElKeys();
+}
+
+// Hook into showScreen
+const _origShowScreen = typeof showScreen === 'function' ? showScreen : null;
+
+// ElevenLabs Audio Generation
+async function generateElevenLabsAudio() {
+  const narration = state.savedNarration;
+  if (!narration) { toast('⚠️ Pehle narration generate karo!'); return; }
+
+  const activeKey = getActiveElKey();
+  if (!activeKey) {
+    toast('⚠️ Koi active ElevenLabs API key nahi! Sidebar mein add karo 🎙');
+    openElSidebar();
+    return;
+  }
+
+  const btn = document.getElementById('elAudioBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Audio ban raha hai...'; }
+  toast('🎙 ElevenLabs se audio generate ho raha hai...');
+
+  try {
+    // Get voices first
+    const voiceRes = await fetch('https://api.elevenlabs.io/v1/voices', {
+      headers: { 'xi-api-key': activeKey.key }
+    });
+    const voiceData = await voiceRes.json();
+
+    // Use first available voice or default
+    const voices = voiceData.voices || [];
+    const voiceId = voices[0]?.voice_id || '21m00Tcm4TlvDq8ikWAM'; // default Rachel
+
+    const audioRes = await fetch(\`https://api.elevenlabs.io/v1/text-to-speech/\${voiceId}\`, {
+      method: 'POST',
+      headers: {
+        'xi-api-key': activeKey.key,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: narration,
+        model_id: 'eleven_multilingual_v2',
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      })
+    });
+
+    if (audioRes.status === 401) {
+      markElKeyExhausted(activeKey.key);
+      toast('❌ Key ka limit khatam! Next key try karo.');
+      if (btn) { btn.disabled = false; btn.innerHTML = '🎙 Audio Generate Karo'; }
+      return;
+    }
+    if (!audioRes.ok) {
+      const errData = await audioRes.json().catch(() => ({}));
+      if (errData?.detail?.status === 'quota_exceeded' || audioRes.status === 429) {
+        markElKeyExhausted(activeKey.key);
+        toast('⚠️ Quota khatam! Key exhausted mark kar di. Dobara dabao — next key use hogi.');
+      } else {
+        toast('❌ Error: ' + (errData?.detail?.message || audioRes.status));
+      }
+      if (btn) { btn.disabled = false; btn.innerHTML = '🎙 Audio Generate Karo'; }
+      return;
+    }
+
+    // Update char count estimate
+    const keys = getElKeys();
+    const k = keys.find(k => k.key === activeKey.key);
+    if (k) { k.charsUsed = Math.min(10000, k.charsUsed + narration.length); saveElKeys(keys); }
+
+    const blob = await audioRes.blob();
+    const url = URL.createObjectURL(blob);
+
+    // Show audio player
+    const audioOut = document.getElementById('elAudioOutput');
+    if (audioOut) {
+      audioOut.style.display = 'block';
+      audioOut.innerHTML = \`
+        <div style="background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="font-size:10px;color:#44bb66;letter-spacing:2px;">🎙 ELEVENLABS AUDIO READY</div>
+          <audio controls style="width:100%;accent-color:#44bb66;" src="\${url}"></audio>
+          <a href="\${url}" download="\${state.title || 'narration'}_\${state.epNum || 'ep'}.mp3" class="img-copy-btn" style="text-align:center;text-decoration:none;border-color:#44bb66;color:#44bb66;">⬇️ MP3 Download Karo</a>
+        </div>
+      \`;
+      audioOut.scrollIntoView({ behavior: 'smooth' });
+    }
+    toast('✅ Audio ready! Download karo 🎉');
+
+  } catch (err) {
+    toast('❌ Error: ' + err.message);
+  }
+
+  if (btn) { btn.disabled = false; btn.innerHTML = '🎙 Audio Generate Karo'; }
+}
+
 // ══ TOAST ══
 let toastTimer;
 function toast(msg) {
@@ -2607,7 +3000,54 @@ window.addEventListener('load', () => {
   load();
   restoreSetupForm();
   renderSetupEpList();
+  updateElFab();
 });
 </script>
+
+<!-- ══════ ELEVENLABS API SIDEBAR ══════ -->
+<div class="el-sidebar-overlay" id="elOverlay" onclick="closeElSidebar()"></div>
+
+<div class="el-sidebar" id="elSidebar">
+  <div class="el-sidebar-header">
+    <span class="el-sidebar-title">🎙 ElevenLabs APIs</span>
+    <button class="btn btn-icon" onclick="closeElSidebar()" style="color:#888;">✕</button>
+  </div>
+  <div class="el-sidebar-body">
+
+    <div style="font-size:11px;color:#666;line-height:1.6;">
+      Multiple API keys add karo. Jab ek ka limit khatam hoga, automatically next use hoga. 🔄
+    </div>
+
+    <!-- Active key indicator -->
+    <div id="elActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
+      <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
+      <div id="elActiveKeyName" style="font-size:12px;color:#c8e8c8;font-family:monospace;"></div>
+    </div>
+
+    <!-- API Keys list -->
+    <div id="elKeysList"></div>
+
+    <!-- Add new key form -->
+    <div class="el-add-form">
+      <div style="font-size:10px;color:#cc88ff;letter-spacing:2px;text-transform:uppercase;">➕ API Key Add Karo</div>
+      <input class="el-add-input" id="elNewKeyInput" type="password" placeholder="sk_... ElevenLabs API Key">
+      <input class="el-add-input" id="elNewKeyName" type="text" placeholder="Label (e.g. Account 1)" style="font-family:'Noto Sans Devanagari',sans-serif;">
+      <button class="btn btn-primary" onclick="addElApiKey()" style="font-size:12px;padding:10px;">➕ Add Key</button>
+    </div>
+
+    <div style="font-size:10px;color:#333;line-height:1.6;padding:4px;">
+      💡 ElevenLabs → Profile → API Keys se key milti hai<br>
+      💡 Free plan: 10,000 chars/month per account
+    </div>
+
+  </div>
+</div>
+
+<!-- ElevenLabs FAB button (only on story/analysis screens) -->
+<button class="el-fab" id="elFab" onclick="openElSidebar()" style="display:none;" title="ElevenLabs API Keys">
+  🎙
+  <span class="el-fab-badge" id="elFabBadge">0</span>
+</button>
+
 </body>
 </html>
