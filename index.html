@@ -2316,16 +2316,12 @@ function loadSceneImg(idx, prompt, seed) {
   if (!wrap) return;
   const activeKey = getActiveTogetherKey();
   if (activeKey) {
-    // Hugging Face Inference API — FLUX.1-schnell (fast, free, high quality)
+    // /api/image proxy ke through HF call (CORS fix)
     const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded, high quality';
-    fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
+    fetch('/api/image', {
       method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + activeKey.key,
-        'Content-Type': 'application/json',
-        'x-use-cache': 'false'
-      },
-      body: JSON.stringify({ inputs: fullPrompt })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: fullPrompt, hfToken: activeKey.key })
     })
     .then(function(res) {
       if (res.status === 503) {
