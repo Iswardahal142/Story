@@ -1058,6 +1058,8 @@ html, body {
       <input id="apiKeyInput">
       <input id="cfgSeason">
       <input id="cfgEp">
+      <input id="cfgTitle">
+      <textarea id="cfgPrompt"></textarea>
     </div>
 
     <!-- Basic Config -->
@@ -1067,31 +1069,43 @@ html, body {
         <label>Channel Name</label>
         <input type="text" id="cfgChannel" value="KAALI RAAT" maxlength="20">
       </div>
-      <div class="field">
-        <label>Story Title (Hindi mein)</label>
-        <input type="text" id="cfgTitle" placeholder="पुरानी हवेली का राज" maxlength="50">
-      </div>
     </div>
 
-    <!-- Story Prompt -->
-    <div class="card-block">
-      <div class="card-title">✍️ Story Prompt / Idea</div>
-      <div class="preset-chips" id="presetChips">
-        <div class="chip" data-p="Ek purani haveli mein ek nayi family shift hoti hai. Raat ko awaazein aati hain...">🏚 Haveli</div>
-        <div class="chip" data-p="Highway pe raat ko ek driver ko ek aurat hitchhike karti mili. Wo seedha ghar pahunch gayi...">🌙 Highway</div>
-        <div class="chip" data-p="Ek bachche ko roz raat ko ek ajooba dost milta hai jo sirf use dikh ta hai...">👁 Ajooba Dost</div>
-        <div class="chip" data-p="Gaon mein ek purani dargah ke paas log gayab ho rahe hain. Ek journalist ne investigate kiya...">⛩ Dargah</div>
-        <div class="chip" data-p="Ek ladke ko apne purane ghar mein sealed room mila. Andar ek diary thi...">📖 Sealed Room</div>
-        <div class="chip" data-p="Jungle mein camping ke dauran teen dost alag ho gaye. Sirf ek wapas aaya...">🌲 Jungle</div>
+    <!-- AI Story Generator -->
+    <div class="card-block" id="aiGenCard">
+      <div class="card-title">🤖 AI Story Generator</div>
+      <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">
+        AI khud ek unique horror story ka <strong style="color:var(--bone);">title</strong> aur <strong style="color:var(--bone);">plot</strong> generate karega — jo pehle kabhi nahi bana ho.
       </div>
-      <div class="field" style="margin-top:8px;">
-        <label>Ya khud likho apna prompt</label>
-        <textarea id="cfgPrompt" rows="3" placeholder="Story ka idea, characters, setting... jo bhi dimag mein aaye likho. AI baaki karega."></textarea>
+
+      <!-- Genre chips -->
+      <div style="font-size:11px;color:var(--bone-dim);margin-bottom:4px;letter-spacing:1px;">GENRE / SETTING (optional)</div>
+      <div class="preset-chips" id="genreChips">
+        <div class="chip active" data-g="any">🎲 Kuch Bhi</div>
+        <div class="chip" data-g="haveli">🏚 Haveli</div>
+        <div class="chip" data-g="jungle">🌲 Jungle</div>
+        <div class="chip" data-g="highway">🌙 Highway</div>
+        <div class="chip" data-g="gaon">🏘 Gaon</div>
+        <div class="chip" data-g="school">🏫 School</div>
+        <div class="chip" data-g="supernatural">👻 Supernatural</div>
+        <div class="chip" data-g="psychological">🧠 Psychological</div>
       </div>
+
+      <!-- AI Generated preview box -->
+      <div id="aiGenPreview" style="display:none;background:var(--panel2);border:1px solid var(--blood-d);border-radius:8px;padding:14px;margin-top:4px;">
+        <div style="font-size:10px;color:var(--blood);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">✨ Generated Story</div>
+        <div id="genTitlePreview" style="font-size:16px;font-weight:700;color:var(--bone);margin-bottom:6px;"></div>
+        <div id="genPromptPreview" style="font-size:12px;color:var(--bone-dim);line-height:1.6;"></div>
+        <button class="btn btn-ghost" onclick="generateAiStoryIdea()" style="font-size:11px;margin-top:10px;padding:8px 14px;">🔄 Dobara Generate Karo</button>
+      </div>
+
+      <button class="btn btn-primary" id="genIdeaBtn" onclick="generateAiStoryIdea()" style="width:100%;padding:13px;font-size:14px;">
+        ✨ AI se Story Idea Generate Karo
+      </button>
     </div>
 
-    <button class="btn btn-primary" id="startBtn" onclick="startStudio()" style="width:100%;padding:16px;font-size:15px;">
-      🎃 Story Likhna Shuru Karo
+    <button class="btn btn-primary" id="startBtn" onclick="startStudio()" style="width:100%;padding:16px;font-size:15px;display:none;">
+      🎃 Episode 1 Shuru Karo
     </button>
 
     <!-- Link Previous Season -->
@@ -1339,28 +1353,147 @@ function goToSetup() {
 function goToThumb() { showScreen('screenThumb'); }
 function restoreSetupForm() {
   document.getElementById('cfgChannel').value = state.channel || 'KAALI RAAT';
-  document.getElementById('cfgTitle').value = '';
-  document.getElementById('cfgPrompt').value = '';
+  // Reset AI gen state
+  generatedTitle = '';
+  generatedPrompt = '';
+  document.getElementById('aiGenPreview').style.display = 'none';
+  document.getElementById('startBtn').style.display = 'none';
+  document.getElementById('genIdeaBtn').innerHTML = '✨ AI se Story Idea Generate Karo';
   renderLinkSeasonBlock();
 }
 
-// ══ PRESETS ══
-document.querySelectorAll('#presetChips .chip').forEach(c => {
-  c.addEventListener('click', () => {
-    document.getElementById('cfgPrompt').value = c.dataset.p;
-    document.querySelectorAll('#presetChips .chip').forEach(x => x.classList.remove('active'));
-    c.classList.add('active');
+// ══ GENRE CHIP ══
+let selectedGenre = 'any';
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#genreChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#genreChips .chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      selectedGenre = c.dataset.g;
+    });
   });
 });
 
+// ══ AI STORY IDEA GENERATOR ══
+let generatedTitle = '';
+let generatedPrompt = '';
+
+// Track used story ideas to avoid repetition
+function getUsedIdeas() {
+  try { return JSON.parse(localStorage.getItem(SK + '_usedIdeas')) || []; } catch { return []; }
+}
+function saveUsedIdea(title) {
+  const used = getUsedIdeas();
+  used.push(title);
+  if (used.length > 50) used.shift(); // keep last 50
+  try { localStorage.setItem(SK + '_usedIdeas', JSON.stringify(used)); } catch {}
+}
+
+async function generateAiStoryIdea() {
+  const btn = document.getElementById('genIdeaBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner"></div> Soch raha hai...';
+
+  const usedIdeas = getUsedIdeas();
+  const avoidList = usedIdeas.length
+    ? `\n\nYeh titles AVOID karo (pehle generate ho chuke hain):\n${usedIdeas.slice(-20).join(', ')}`
+    : '';
+
+  const genreHint = selectedGenre !== 'any'
+    ? `Setting/genre: ${selectedGenre}`
+    : 'Koi bhi horror setting (haveli, jungle, highway, gaon, school, supernatural, psychological — kuch bhi)';
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages: [{
+          role: 'user',
+          content: `Tu ek Hindi horror story creator hai. Ek BILKUL NAYA aur UNIQUE horror story idea generate kar.
+
+${genreHint}${avoidList}
+
+RULES:
+- Title: Catchy Hindi/Hinglish horror title (max 6 words)
+- Plot: 3-4 sentences mein unique story ka setup — characters, setting, mystery
+- Hamesha naya angle lo, clichéd stories avoid karo
+- Aisa plot lo jo pehle YouTube pe nahi suna ho
+
+Sirf JSON format mein respond karo, koi extra text nahi:
+{"title": "...", "plot": "..."}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.content?.[0]?.text || '';
+    const clean = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(clean);
+
+    generatedTitle = parsed.title || '';
+    generatedPrompt = parsed.plot || '';
+
+    if (generatedTitle && generatedPrompt) {
+      document.getElementById('genTitlePreview').textContent = generatedTitle;
+      document.getElementById('genPromptPreview').textContent = generatedPrompt;
+      document.getElementById('aiGenPreview').style.display = 'block';
+      document.getElementById('startBtn').style.display = 'flex';
+      btn.innerHTML = '✨ AI se Story Idea Generate Karo';
+    } else {
+      toast('⚠️ Idea generate nahi hua, dobara try karo');
+      btn.innerHTML = '✨ AI se Story Idea Generate Karo';
+    }
+  } catch (err) {
+    toast('❌ Error: ' + err.message);
+    btn.innerHTML = '✨ AI se Story Idea Generate Karo';
+  }
+  btn.disabled = false;
+}
+
+// ══ IMAGE PROMPT GENERATOR FOR EACH PART ══
+async function generatePartImagePrompt(chunkEl, storyText, partNum) {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{
+          role: 'user',
+          content: `Yeh Hindi horror story ka ek part hai (Part ${partNum}):\n\n${storyText}\n\nIs scene ke liye ek detailed image generation prompt banao.\n\nRequirements:\n- 2D horror animation / cel-shaded cartoon style\n- Is specific scene ka most dramatic/scary moment capture karo\n- Characters, location, lighting, colors describe karo\n- Dark, atmospheric horror mood\n- English mein prompt do\n- Sirf prompt text, koi explanation nahi, max 80 words`
+        }]
+      })
+    });
+    const data = await res.json();
+    const imgPrompt = data.content?.[0]?.text?.trim() || '';
+    if (imgPrompt) {
+      const copyRow = chunkEl.querySelector('.chunk-copy-row');
+      const copyBtn = chunkEl.querySelector('.chunk-img-copy-btn');
+      if (copyRow && copyBtn) {
+        copyRow.style.display = 'block';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(imgPrompt).then(() => {
+            copyBtn.textContent = '✅ Copied!';
+            setTimeout(() => { copyBtn.textContent = '🖼 Image Prompt Copy Karo'; }, 2000);
+          }).catch(() => toast('❌ Copy nahi hua'));
+        };
+      }
+    }
+  } catch (e) {
+    // Silent fail — copy button stays hidden
+  }
+}
+
 // ══ START ══
 async function startStudio() {
-  const title = document.getElementById('cfgTitle').value.trim();
-  if (!title) { toast('⚠️ Story title daalo!'); return; }
+  if (!generatedTitle) { toast('⚠️ Pehle AI se story idea generate karo!'); return; }
 
   state.channel = document.getElementById('cfgChannel').value.trim() || 'KAALI RAAT';
-  state.title = title;
-  state.prompt = document.getElementById('cfgPrompt').value.trim();
+  state.title = generatedTitle;
+  state.prompt = generatedPrompt;
 
   // Always start fresh at Season 1, EP 01 unless linked season
   if (!state.linkedSeasonId) {
@@ -1368,13 +1501,13 @@ async function startStudio() {
     state.epNum = 'EP 01';
     state.seasonBible = null;
   }
-  // epNum stays from linkedSeason flow (already set to EP 01 of new season)
 
   state.storyChunks = [];
   state.storyEnded = false;
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
+  saveUsedIdea(generatedTitle); // mark this idea as used
   save();
 
   _updateTopbar();
@@ -1540,6 +1673,8 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
       updateWordCount();
       save();
       document.getElementById('promptInput').value = '';
+      // Generate image prompt for this part silently
+      generatePartImagePrompt(chunkEl, fullText.trim(), state.storyChunks.length);
     }
 
   } catch (err) {
@@ -1563,12 +1698,17 @@ function createChunkEl(num) {
 
   const div = document.createElement('div');
   div.className = 'story-chunk';
+  div.dataset.partNum = num;
   div.innerHTML = `
     <div class="chunk-meta">
-      <span>📖</span> Part ${num}
-      ${num > 1 ? `<span style="margin-left:auto;font-size:10px;color:#333;">${getTimeStamp()}</span>` : ''}
+      <span>📖</span>
+      <span class="chunk-ep-label" style="font-size:10px;color:var(--blood);font-weight:700;letter-spacing:1px;">EP ${String(state.epNum.match(/\d+/)?.[0] || 1).padStart(2,'0')} · PART ${num}</span>
+      <span style="margin-left:auto;font-size:10px;color:#333;">${num > 1 ? getTimeStamp() : ''}</span>
     </div>
     <div class="chunk-text"></div>
+    <div class="chunk-copy-row" style="display:none;margin-top:10px;">
+      <button class="img-copy-btn chunk-img-copy-btn" style="font-size:11px;padding:5px 12px;">🖼 Image Prompt Copy Karo</button>
+    </div>
   `;
   area.appendChild(div);
   return div;
@@ -2100,6 +2240,7 @@ function loadEpisode(id) {
   state.storyChunks.forEach((chunk, i) => {
     const el = createChunkEl(i + 1);
     el.querySelector('.chunk-text').textContent = chunk.text;
+    // Note: image prompts not cached, copy button stays hidden on reload
   });
   wordCount = state.storyChunks.reduce((a, c) => a + c.text.split(/\s+/).length, 0);
   updateWordCount();
