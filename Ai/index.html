@@ -106,7 +106,6 @@
     font-family: 'Space Mono', monospace;
   }
 
-  /* API KEY INPUT */
   .card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -145,7 +144,6 @@
     border-color: var(--accent);
     box-shadow: 0 0 0 3px rgba(124,106,255,0.15);
   }
-  input[type="password"] { letter-spacing: 0.05em; }
 
   textarea {
     resize: none;
@@ -200,7 +198,6 @@
   .generate-btn:active:not(:disabled) { transform: translateY(0); }
   .generate-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  /* RESULT */
   .result-area {
     margin-top: 24px;
     display: none;
@@ -234,7 +231,6 @@
     border-radius: 16px;
   }
 
-  /* LOADER */
   .loader {
     display: flex;
     flex-direction: column;
@@ -259,7 +255,6 @@
   }
   @keyframes blink { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
 
-  /* ERROR */
   .error-box {
     background: rgba(255,80,80,0.08);
     border: 1px solid rgba(255,80,80,0.25);
@@ -300,12 +295,6 @@
     <h1>Image Generator</h1>
     <p class="subtitle">Powered by FLUX.1 via Hugging Face</p>
   </header>
-
-  <!-- API KEY -->
-  <div class="card">
-    <label>🔑 Hugging Face Token</label>
-    <input type="password" id="apiKey" placeholder="hf_..." autocomplete="off" />
-  </div>
 
   <!-- PROMPT -->
   <div class="card">
@@ -358,12 +347,10 @@ function setPrompt(text) {
 })();
 
 async function generate() {
-  const apiKey = document.getElementById('apiKey').value.trim();
   const prompt = document.getElementById('prompt').value.trim();
   const errorBox = document.getElementById('errorBox');
   const resultArea = document.getElementById('resultArea');
   const imageWrapper = document.getElementById('imageWrapper');
-  const loader = document.getElementById('loader');
   const downloadBtn = document.getElementById('downloadBtn');
   const genBtn = document.getElementById('genBtn');
 
@@ -371,7 +358,6 @@ async function generate() {
   errorBox.className = 'error-box';
   downloadBtn.style.display = 'none';
 
-  if (!apiKey) { showError('Hugging Face token daalo pehle! hf_ se start hota hai.'); return; }
   if (!prompt) { showError('Prompt likhna toh padega bhai!'); return; }
 
   // Show loader
