@@ -2272,8 +2272,9 @@ async function generateScenes() {
 
 function buildPollinationsUrl(prompt, seed) {
   const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
+  const encoded = encodeURIComponent(fullPrompt);
   const s = seed || Math.floor(Math.random()*99999);
-  return '/api/generate?prompt=' + encodeURIComponent(fullPrompt) + '&width=768&height=432&seed=' + s;
+  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true&enhance=true';
 }
 
 function renderScenes(scenes) {
@@ -2329,11 +2330,19 @@ function loadSceneImg(idx, prompt, seed) {
       + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" target="_blank" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
     if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; btn.style.borderColor = '#443300'; btn.style.color = '#ffaa00'; }
   };
+  let retryCount = 0;
   img.onerror = function() {
-    wrap.innerHTML = '';
-    wrap.style.cssText = '';
-    if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
-    toast('❌ Image load nahi hui, retry karo');
+    if (retryCount < 2) {
+      retryCount++;
+      setTimeout(function() {
+        const newUrl = buildPollinationsUrl(prompt, Math.floor(Math.random()*99999));
+        img.src = newUrl;
+      }, retryCount * 3000);
+    } else {
+      wrap.innerHTML = '';
+      wrap.style.cssText = '';
+      if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
+    }
   };
   img.src = url;
 }
@@ -2346,7 +2355,7 @@ function reloadAllImages() {
     if (s.imgprompt) {
       setTimeout(function() {
         loadSceneImg(idx, s.imgprompt, Math.floor(Math.random()*99999));
-      }, idx * 2000);
+      }, idx * 4000);
     }
   });
 }
