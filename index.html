@@ -1798,6 +1798,7 @@ async function startStudio() {
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
+  state.savedScenesEpId = null;
   state.characterBible = null;
   saveUsedIdea(generatedTitle); // mark this idea as used
   save();
@@ -1833,6 +1834,7 @@ async function startNextEpisode() {
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
+  state.savedScenesEpId = null;
   state.characterBible = null;
   save();
 
@@ -2128,9 +2130,22 @@ async function endStoryNow() {
 function goToAnalysis() {
   if (!state.storyChunks.length) { toast('⚠️ Pehle kuch story likho!'); return; }
   showScreen('screenAnalysis');
-  // Auto-load saved data if exists
-  if (state.savedScenes) renderScenes(state.savedScenes);
-  if (state.savedChars) renderChars(state.savedChars);
+  // Only load saved scenes/chars if they belong to current episode
+  const savedEpId = state.savedScenesEpId;
+  const curEpId = state.currentEpId;
+  if (state.savedScenes && savedEpId === curEpId) {
+    renderScenes(state.savedScenes);
+  } else {
+    // Clear stale scenes from previous episode
+    document.getElementById('scenesOutput').innerHTML = '';
+    state.savedScenes = null;
+  }
+  if (state.savedChars && savedEpId === curEpId) {
+    renderChars(state.savedChars);
+  } else {
+    document.getElementById('charsOutput').innerHTML = '';
+    state.savedChars = null;
+  }
 }
 
 function switchTab(tab) {
@@ -2231,6 +2246,7 @@ MINIMUM 20 scenes. Sirf format, koi extra text nahi.`
       if (out) out.innerHTML = '<div class="analysis-empty">Scenes parse nahi ho paye. Manually generate karo.</div>';
     } else {
       state.savedScenes = scenes;
+      state.savedScenesEpId = state.currentEpId;
       save();
       saveCurrentEpisode(true);
       if (out) renderScenes(scenes);
@@ -2253,7 +2269,7 @@ function buildPollinationsUrl(prompt, seed) {
   const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
   const encoded = encodeURIComponent(fullPrompt);
   const s = seed || Math.floor(Math.random()*99999);
-  return 'https://pollinations.ai/p/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true&model=flux';
+  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true';
 }
 
 function renderScenes(scenes) {
@@ -2394,6 +2410,7 @@ async function generateCharacters() {
       out.innerHTML = '<div class="analysis-empty">Characters parse nahi ho paye. Dobara try karo.</div>';
     } else {
       state.savedChars = chars;
+      state.savedScenesEpId = state.currentEpId;
       save();
       saveCurrentEpisode(true);
       renderChars(chars);
