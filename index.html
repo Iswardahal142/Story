@@ -1579,44 +1579,41 @@ async function sendContinue(isFirst = false) {
   isGenerating = true;
   setBtnsLoading(true);
 
-  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Tujhe ek gripping, scary HINDI horror story likhni hai jo YouTube ke liye 2D animated cartoon video mein use hogi.
+  const systemPrompt = `You are a Hindi horror story writer. You MUST write ONLY in Hindi (Devanagari script). This is non-negotiable.
 
-BAHUT ZAROORI RULES — INHE IGNORE KARNA MANA HAI:
-- SIRF AUR SIRF HINDI DEVANAGARI SCRIPT MEIN LIKHO — ek bhi English sentence nahi
-- Hinglish allowed hai (Roman mein Hindi words) lekin poora sentence English mein BILKUL NAHI
-- Har part SIRF 100-120 words ka hoga — isse zyada nahi
-- Story slowly build karni hai — atmosphere, suspense, dread create karo
-- Sensory details use karo (smells, sounds, feelings)
-- Pehle part mein scene setup karo, characters introduce karo
-- Har part ke end mein ek cliffhanger ya mystery chhodo
-- Story TAB TAK continue karni hai jab tak "STORY END KARO" instruction na mile
-- Kabhi bhi khud story end mat karo — sirf continue karo aur hook pe chhodo
-- Dialogues Hindi mein hi likho
-- 2D cartoon animation ke liye visual scenes describe karo${state.seasonBible ? `
+ABSOLUTE RULES — VIOLATING THESE IS NOT ALLOWED:
+1. WRITE ONLY IN HINDI DEVANAGARI SCRIPT (हिंदी देवनागरी). Example: "रात का अंधेरा था।"
+2. DO NOT write even a single sentence in English. NOT ONE.
+3. Each part must be EXACTLY 100-120 Hindi words. No more, no less.
+4. End every part on a cliffhanger or suspense hook.
+5. Include sensory details — smells, sounds, touch, fear.
+6. Do NOT end the story yourself — keep continuing until told "STORY END KARO".
+7. Dialogues must also be in Hindi Devanagari only.
+
+WRONG (never do this): "It was a dark night. Ravi saw something strange."
+RIGHT (always do this): "रात का घना अंधेरा छाया हुआ था। रवि ने कुछ अजीब देखा..."${state.seasonBible ? `
 
 PREVIOUS SEASON CONTINUITY (MUST FOLLOW):
-${state.seasonBible}
-
-Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season mein consistently follow karo. Characters ki personality, appearance, aur relationships same rahni chahiye.` : ''}`;
+${state.seasonBible}` : ''}`;
 
   // Build conversation history
   const messages = [];
   const storyContext = state.storyChunks.map((c,i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
 
   if (state.storyChunks.length === 0) {
-    const userMsg = `Story shuru karo:\n\nTitle: ${state.title}\n\n${state.prompt ? 'Prompt/Idea: ' + state.prompt + '\n\n' : ''}Pehla part likho — scene set karo, atmosphere build karo, 1-2 characters introduce karo. Suspense start karo. SIRF 100-120 words. HINDI MEIN.`;
+    const userMsg = `हिंदी देवनागरी में लिखो। एक भी English sentence मत लिखो।\n\nकहानी का शीर्षक: ${state.title}\n\n${state.prompt ? 'कहानी का विचार: ' + state.prompt + '\n\n' : ''}पहला भाग लिखो — scene set करो, 1-2 characters introduce करो, suspense शुरू करो। सिर्फ 100-120 Hindi words। हिंदी देवनागरी में।`;
     messages.push({ role: 'user', content: userMsg });
   } else {
     messages.push({
       role: 'user',
-      content: `Story ka context:\n\n${storyContext}`
+      content: `पिछली कहानी (हिंदी में है, इसी भाषा में जारी रखो):\n\n${storyContext}`
     });
     messages.push({
       role: 'assistant',
-      content: '[Story continues...]'
+      content: '[कहानी जारी है...]'
     });
-    let nextInstruction = `Story continue karo. Agli part likho. SIRF 100-120 words. HINDI MEIN LIKHO. Cliffhanger pe khatam karo.`;
-    if (hint) nextInstruction = `Story continue karo with this direction: "${hint}"\n\nSIRF 100-120 words. HINDI MEIN. Cliffhanger pe khatam karo.`;
+    let nextInstruction = `कहानी आगे बढ़ाओ। अगला भाग लिखो। सिर्फ हिंदी देवनागरी में। 100-120 words। Cliffhanger पर खत्म करो।`;
+    if (hint) nextInstruction = `कहानी आगे बढ़ाओ। direction: "${hint}"। सिर्फ हिंदी देवनागरी में। 100-120 words। Cliffhanger पर खत्म करो।`;
     messages.push({ role: 'user', content: nextInstruction });
   }
 
@@ -1766,7 +1763,7 @@ async function endStoryNow() {
   isGenerating = true;
   setBtnsLoading(true);
 
-  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Story ka satisfying ending likho.`;
+  const systemPrompt = `You are a Hindi horror story writer. Write ONLY in Hindi Devanagari script (हिंदी देवनागरी). Do NOT write in English. Write the story ending in pure Hindi.`;
   const storyContext = state.storyChunks.map((c, i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
 
   const chunkEl = createChunkEl(state.storyChunks.length + 1);
@@ -1788,7 +1785,7 @@ async function endStoryNow() {
           { role: 'system', content: systemPrompt },
           {
             role: 'user',
-            content: `Yeh story hai:\n\n${storyContext}\n\nAb is story ka ek powerful, scary, memorable ENDING likho. 200-250 words. "The End" ya "Samapt" jaisi line se band karo.`
+            content: `यह कहानी है:\n\n${storyContext}\n\nअब इस कहानी का एक powerful, scary ending हिंदी देवनागरी में लिखो। 100-120 words। "समाप्त" से खत्म करो। एक भी English sentence नहीं।`
           }
         ],
         max_tokens: 500,
