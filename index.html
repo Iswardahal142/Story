@@ -2321,7 +2321,7 @@ function loadSceneImg(idx, prompt, seed) {
     fetch('/api/image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: fullPrompt, hfToken: activeKey.key })
+      body: JSON.stringify({ prompt: fullPrompt })
     })
     .then(function(res) {
       if (res.status === 503) {
