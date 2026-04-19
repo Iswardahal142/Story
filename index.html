@@ -1213,6 +1213,50 @@ html, body {
   align-items: center;
   justify-content: center;
 }
+
+/* ══ POLLINATIONS IMAGE ══ */
+.scene-img-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0a0000;
+  border: 1px solid var(--border);
+  margin-top: 8px;
+  position: relative;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scene-img-wrap img {
+  width: 100%;
+  display: block;
+  border-radius: 8px;
+}
+.scene-img-loading {
+  font-size: 11px;
+  color: #444;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.scene-img-btn {
+  background: #0a0015;
+  border: 1px solid #330044;
+  color: #cc88ff;
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 11px;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.15s;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+}
+.scene-img-btn:hover { border-color: #8800cc; background: #150025; }
+.scene-img-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 </style>
 </head>
 <body>
@@ -1382,10 +1426,8 @@ html, body {
       </div>
       <div id="narrationText" style="font-size:14px;color:#c8e8c8;line-height:1.9;white-space:pre-wrap;"></div>
       <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
-        <button class="img-copy-btn" onclick="copyNarration()" style="border-color:#44bb66;color:#44bb66;">📋 Copy Karo</button>
-        <button class="img-copy-btn" id="elAudioBtn" onclick="generateElevenLabsAudio()" style="border-color:#8800cc;color:#cc88ff;background:#0d0015;">🎙 Audio Generate Karo</button>
+        <button class="img-copy-btn" onclick="copyNarration()" style="border-color:#44bb66;color:#44bb66;">📋 ElevenLabs ke liye Copy Karo</button>
       </div>
-      <div id="elAudioOutput" style="display:none;margin-top:8px;"></div>
     </div>
   </div>
 
@@ -2180,6 +2222,11 @@ async function generateScenes() {
   await generateScenesAuto();
 }
 
+function buildPollinationsUrl(prompt, seed) {
+  const encoded = encodeURIComponent(prompt + ', 2D horror animation, dark atmospheric, cel-shaded');
+  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + (seed || Math.floor(Math.random()*99999)) + '&nologo=true&enhance=true';
+}
+
 function renderScenes(scenes) {
   const out = document.getElementById('scenesOutput');
   if (!out) return;
@@ -2187,36 +2234,66 @@ function renderScenes(scenes) {
   const totalScenes = scenes.length;
   const locations = [...new Set(scenes.map(s => s.location))].length;
 
-  // Build HTML without template literals for prompts (avoid backtick issues)
-  let html = `<div style="background:#0a0000;border:1px solid var(--blood-d);border-radius:8px;padding:12px;margin-bottom:4px;display:flex;gap:16px;flex-wrap:wrap;">
-    <span style="font-size:12px;color:var(--blood);">🎬 ${totalScenes} Scenes</span>
-    <span style="font-size:12px;color:var(--bone-dim);">📍 ${locations} Locations</span>
-    <span style="font-size:12px;color:var(--green);">✅ Character Consistent</span>
-  </div>`;
+  let html = '<div style="background:#0a0000;border:1px solid var(--blood-d);border-radius:8px;padding:12px;margin-bottom:4px;display:flex;gap:16px;flex-wrap:wrap;">'
+    + '<span style="font-size:12px;color:var(--blood);">🎬 ' + totalScenes + ' Scenes</span>'
+    + '<span style="font-size:12px;color:var(--bone-dim);">📍 ' + locations + ' Locations</span>'
+    + '<span style="font-size:12px;color:var(--green);">🖼 Pollinations AI Images</span>'
+    + '</div>';
 
-  scenes.forEach((s, idx) => {
+  scenes.forEach(function(s, idx) {
     const safePrompt = (s.imgprompt || '').replace(/"/g, '&quot;');
-    html += `<div class="scene-card" data-imgprompt="${safePrompt}">
-      <div class="scene-num">🎬 Scene ${s.num} <span style="color:#444;font-size:9px;letter-spacing:1px;">${(s.mood||'').toUpperCase()}</span></div>
-      <div class="scene-title">${s.title}</div>
-      <div class="scene-meta"><span class="scene-tag">📍 ${s.location}</span></div>
-      <div class="scene-desc">${s.what}</div>
-      ${s.prev_connect ? `<div style="font-size:11px;color:#555;margin-top:4px;font-style:italic;">🔗 ${s.prev_connect}</div>` : ''}
-      ${s.imgprompt ? `<button class="img-copy-btn" style="margin-top:8px;" onclick="copyScenePrompt(this)">🖼 Image Prompt Copy</button>` : ''}
-    </div>`;
+    const imgId = 'scene-img-' + idx;
+    html += '<div class="scene-card" data-imgprompt="' + safePrompt + '" data-idx="' + idx + '">'
+      + '<div class="scene-num">🎬 Scene ' + s.num + ' <span style="color:#444;font-size:9px;letter-spacing:1px;">' + (s.mood||'').toUpperCase() + '</span></div>'
+      + '<div class="scene-title">' + s.title + '</div>'
+      + '<div class="scene-meta"><span class="scene-tag">📍 ' + s.location + '</span></div>'
+      + '<div class="scene-desc">' + s.what + '</div>'
+      + (s.prev_connect ? '<div style="font-size:11px;color:#555;margin-top:4px;font-style:italic;">🔗 ' + s.prev_connect + '</div>' : '')
+      + (s.imgprompt ? '<div class="scene-img-wrap" id="' + imgId + '"><div class="scene-img-loading"><div class="spinner"></div>Image load ho rahi hai...</div></div>'
+        + '<button class="scene-img-btn" onclick="regenSceneImg(' + idx + ')">🔄 Dobara Generate</button>'
+        : '')
+      + '</div>';
   });
 
   out.innerHTML = html;
+
+  // Auto load images for all scenes
+  scenes.forEach(function(s, idx) {
+    if (s.imgprompt) loadSceneImg(idx, s.imgprompt, idx * 100);
+  });
+}
+
+function loadSceneImg(idx, prompt, seed) {
+  const wrap = document.getElementById('scene-img-' + idx);
+  if (!wrap) return;
+  const url = buildPollinationsUrl(prompt, seed || idx * 100);
+  const img = new Image();
+  img.onload = function() {
+    wrap.innerHTML = '<img src="' + url + '" alt="Scene ' + (idx+1) + '" loading="lazy">'
+      + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
+  };
+  img.onerror = function() {
+    wrap.innerHTML = '<div class="scene-img-loading" style="color:#444;">⚠️ Image load nahi hui<br><button class="scene-img-btn" onclick="regenSceneImg(' + idx + ')">Retry</button></div>';
+  };
+  img.src = url;
+}
+
+function regenSceneImg(idx) {
+  const scenes = state.savedScenes;
+  if (!scenes || !scenes[idx]) return;
+  const wrap = document.getElementById('scene-img-' + idx);
+  if (wrap) wrap.innerHTML = '<div class="scene-img-loading"><div class="spinner"></div>Image load ho rahi hai...</div>';
+  loadSceneImg(idx, scenes[idx].imgprompt, Math.floor(Math.random()*99999));
 }
 
 function copyScenePrompt(btn) {
   const card = btn.closest('.scene-card');
   const prompt = card ? card.getAttribute('data-imgprompt') : '';
-  if (!prompt) { toast('❌ Prompt nahi mila'); return; }
-  navigator.clipboard.writeText(prompt).then(() => {
-    btn.textContent = '✅ Copied!';
-    setTimeout(() => { btn.textContent = '🖼 Image Prompt Copy'; }, 2000);
-  }).catch(() => toast('❌ Copy nahi hua'));
+  if (!prompt) { toast('Prompt nahi mila'); return; }
+  navigator.clipboard.writeText(prompt).then(function() {
+    btn.textContent = 'Copied!';
+    setTimeout(function() { btn.textContent = 'Prompt Copy'; }, 2000);
+  }).catch(function() { toast('Copy nahi hua'); });
 }
 
 function parseScenes(raw) {
