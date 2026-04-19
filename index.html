@@ -1093,10 +1093,8 @@ html, body {
 
       <!-- AI Generated preview box -->
       <div id="aiGenPreview" style="display:none;background:var(--panel2);border:1px solid var(--blood-d);border-radius:8px;padding:14px;margin-top:4px;">
-        <div style="font-size:10px;color:var(--blood);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">✨ Generated Story</div>
-        <div id="genTitlePreview" style="font-size:16px;font-weight:700;color:var(--bone);margin-bottom:6px;"></div>
-        <div id="genPromptPreview" style="font-size:12px;color:var(--bone-dim);line-height:1.6;"></div>
-        <button class="btn btn-ghost" onclick="generateAiStoryIdea()" style="font-size:11px;margin-top:10px;padding:8px 14px;">🔄 Dobara Generate Karo</button>
+        <div style="font-size:10px;color:var(--blood);letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">✨ Story Title</div>
+        <div id="genTitlePreview" style="font-size:17px;font-weight:700;color:var(--bone);line-height:1.4;"></div>
       </div>
 
       <button class="btn btn-primary" id="genIdeaBtn" onclick="generateAiStoryIdea()" style="width:100%;padding:13px;font-size:14px;">
@@ -1366,6 +1364,7 @@ function restoreSetupForm() {
   document.getElementById('aiGenPreview').style.display = 'none';
   document.getElementById('startBtn').style.display = 'none';
   document.getElementById('genIdeaBtn').innerHTML = '✨ AI se Story Idea Generate Karo';
+  document.getElementById('genTitlePreview').textContent = '';
   renderLinkSeasonBlock();
 }
 
@@ -1415,7 +1414,7 @@ async function generateAiStoryIdea() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'openai/gpt-4.1-nano',
+        model: 'openai/gpt-4o-mini',
         max_tokens: 400,
         temperature: 0.95,
         messages: [{
@@ -1445,10 +1444,9 @@ Sirf JSON format mein respond karo, koi extra text nahi:
 
     if (generatedTitle && generatedPrompt) {
       document.getElementById('genTitlePreview').textContent = generatedTitle;
-      document.getElementById('genPromptPreview').textContent = generatedPrompt;
       document.getElementById('aiGenPreview').style.display = 'block';
       document.getElementById('startBtn').style.display = 'flex';
-      btn.innerHTML = '✨ AI se Story Idea Generate Karo';
+      btn.innerHTML = '🔄 Dobara Generate Karo';
     } else {
       toast('⚠️ Idea generate nahi hua, dobara try karo');
       btn.innerHTML = '✨ AI se Story Idea Generate Karo';
@@ -1637,7 +1635,7 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4.1-nano',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           ...messages
@@ -1785,7 +1783,7 @@ async function endStoryNow() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4.1-nano',
+        model: 'openai/gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           {
