@@ -1324,6 +1324,7 @@ let state = {
   linkedSeasonId: null,
   savedScenes: null,   // persisted scene breakdown
   savedChars: null,    // persisted character list
+  characterBible: null, // auto-extracted character visual descriptions
 };
 
 // ══ PERSIST ══
@@ -1515,6 +1516,7 @@ async function startStudio() {
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
+  state.characterBible = null;
   saveUsedIdea(generatedTitle); // mark this idea as used
   save();
 
@@ -1549,6 +1551,7 @@ async function startNextEpisode() {
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
+  state.characterBible = null;
   save();
 
   _updateTopbar();
@@ -1684,6 +1687,10 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
       document.getElementById('promptInput').value = '';
       // Generate image prompt for this part silently
       generatePartImagePrompt(chunkEl, fullText.trim(), state.storyChunks.length);
+      // After first chunk, extract characters for consistency
+      if (state.storyChunks.length === 1 && !state.characterBible) {
+        extractCharacterBible(fullText.trim());
+      }
     }
 
   } catch (err) {
@@ -1833,6 +1840,9 @@ async function endStoryNow() {
   save();
   saveCurrentEpisode(true);
   scrollToBottom();
+  // Auto-generate scenes after story ends
+  toast('🎬 Scenes auto-generate ho rahe hain...');
+  setTimeout(() => generateScenesAuto(), 1200);
 }
 
 // ══ ANALYSIS ══
@@ -1851,16 +1861,45 @@ function switchTab(tab) {
   document.getElementById('panelChars').style.display = tab === 'chars' ? 'flex' : 'none';
 }
 
-async function generateScenes() {
-  const btn = document.getElementById('genScenesBtn');
-  const out = document.getElementById('scenesOutput');
-  if (!state.storyChunks.length) { toast('⚠️ Story nahi hai abhi!'); return; }
+// ══ EXTRACT CHARACTER BIBLE (auto, silent) ══
+async function extractCharacterBible(firstChunkText) {
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        max_tokens: 600,
+        temperature: 0.3,
+        messages: [{
+          role: 'user',
+          content: `Story title: "${state.title}"\nStory idea: "${state.prompt}"\nFirst part: ${firstChunkText}\n\nIs story ke expected main characters ki visual description do for IMAGE GENERATION.\nFormat (JSON array):\n[{"name":"character name","visual":"detailed English visual description for image gen — age, build, face, hair, eye color, skin tone, clothing style, any distinctive features. Max 40 words."},...]\nSirf JSON array, koi extra text nahi.`
+        }]
+      })
+    });
+    const data = await res.json();
+    const raw = data.choices?.[0]?.message?.content?.trim() || '';
+    const clean = raw.replace(/\`\`\`json|\`\`\`/g, '').trim();
+    const chars = JSON.parse(clean);
+    if (Array.isArray(chars) && chars.length) {
+      state.characterBible = chars;
+      save();
+    }
+  } catch(e) { /* silent */ }
+}
 
-  btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Scenes analyze ho rahe hain...';
-  out.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>AI story padh raha hai...</div>';
+// ══ AUTO SCENE GENERATION (called after story ends) ══
+async function generateScenesAuto() {
+  const out = document.getElementById('scenesOutput');
+  const btn = document.getElementById('genScenesBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Auto-generating...'; }
+  if (out) out.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>20+ scenes ban rahe hain, thoda wait karo...</div>';
 
   const storyText = state.storyChunks.map(c => c.text).join('\n\n');
+  const charDesc = state.characterBible
+    ? '\n\nCHARACTER VISUAL BIBLE (inn descriptions ko EVERY scene ke imgprompt mein include karo — character wahan ho ya na ho, background mein bhi):\n' +
+      state.characterBible.map(c => `${c.name}: ${c.visual}`).join('\n')
+    : '';
 
   try {
     const res = await fetch('/api/ai', {
@@ -1868,12 +1907,38 @@ async function generateScenes() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
+        max_tokens: 4000,
+        temperature: 0.35,
         messages: [{
           role: 'user',
-          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story ko scene-by-scene breakdown do. Har scene ke liye EXACTLY yeh format use karo:\n\nSCENE_START\nnum: 1\ntitle: Scene ka naam\nlocation: Kahan ho raha hai\nmood: Daravna / Suspenseful / Creepy / Intense\nwhat: Kya hua is scene mein (1-2 lines)\nimgprompt: [English only] Detailed image generation prompt for this scene. 2D horror animation style, cel-shaded, dark atmospheric lighting. Describe: setting, time of night, key visual elements, character positions if any, color palette, mood. Do not mention any character names.\nSCENE_END\n\nSirf yeh format, koi introduction ya explanation nahi.`
-        }],
-        max_tokens: 2000,
-        temperature: 0.4,
+          content: `Yeh Hindi horror story hai (Title: "${state.title}"):
+
+${storyText}
+${charDesc}
+
+Is poori story ko MINIMUM 20 SCENES mein tod do. Har scene 1 story part ka ek beat hai.
+
+CONSISTENCY RULES (BAHUT ZAROORI):
+- Har scene ka imgprompt PICHLE scene se location/character visually connect hona chahiye
+- Characters ki appearance (clothing, hair, face) BILKUL SAME rahni chahiye har scene mein
+- Agar location same hai toh describe same rakho (same walls, same furniture, same lighting direction)
+- Har imgprompt mein character ka full visual (height, clothing, face) repeat karo taaki AI consistent rakh sake
+- imgprompt English mein, baaki sab Hindi mein
+
+Har scene ke liye EXACTLY yeh format:
+
+SCENE_START
+num: [number]
+title: [Hindi scene title]
+location: [exact location — same words use karo baar baar same location ke liye]
+mood: [ek word — Daravna/Suspenseful/Intense/Creepy/Shocking]
+what: [kya hua — 1 line Hindi mein]
+prev_connect: [pichle scene se kya connect hai — 1 line]
+imgprompt: [English — 2D horror cel-shaded animation style, dark atmospheric. Include: exact location details matching previous scenes, character full visual description from bible above, action/pose, lighting, color palette, camera angle. 60-80 words.]
+SCENE_END
+
+MINIMUM 20 scenes. Sirf format, koi extra text nahi.`
+        }]
       })
     });
     const data = await res.json();
@@ -1881,41 +1946,64 @@ async function generateScenes() {
     const scenes = parseScenes(raw);
 
     if (!scenes.length) {
-      out.innerHTML = '<div class="analysis-empty">Scenes parse nahi ho paye. Dobara try karo.</div>';
+      if (out) out.innerHTML = '<div class="analysis-empty">Scenes parse nahi ho paye. Manually generate karo.</div>';
     } else {
       state.savedScenes = scenes;
       save();
       saveCurrentEpisode(true);
-      renderScenes(scenes);
+      if (out) renderScenes(scenes);
+      toast(`✅ ${scenes.length} scenes ready!`);
     }
   } catch (err) {
-    out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
+    if (out) out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
   }
 
-  btn.disabled = false;
-  btn.innerHTML = '🔄 Dobara Generate Karo';
+  if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Dobara Generate Karo'; }
+}
+
+async function generateScenes() {
+  const btn = document.getElementById('genScenesBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Scenes generate ho rahe hain...'; }
+  await generateScenesAuto();
 }
 
 function renderScenes(scenes) {
   const out = document.getElementById('scenesOutput');
   if (!out) return;
-  out.innerHTML = scenes.map(s => `
-    <div class="scene-card">
-      <div class="scene-num">🎬 Scene ${s.num}</div>
+
+  const totalScenes = scenes.length;
+  const locations = [...new Set(scenes.map(s => s.location))].length;
+
+  // Build HTML without template literals for prompts (avoid backtick issues)
+  let html = `<div style="background:#0a0000;border:1px solid var(--blood-d);border-radius:8px;padding:12px;margin-bottom:4px;display:flex;gap:16px;flex-wrap:wrap;">
+    <span style="font-size:12px;color:var(--blood);">🎬 ${totalScenes} Scenes</span>
+    <span style="font-size:12px;color:var(--bone-dim);">📍 ${locations} Locations</span>
+    <span style="font-size:12px;color:var(--green);">✅ Character Consistent</span>
+  </div>`;
+
+  scenes.forEach((s, idx) => {
+    const safePrompt = (s.imgprompt || '').replace(/"/g, '&quot;');
+    html += `<div class="scene-card" data-imgprompt="${safePrompt}">
+      <div class="scene-num">🎬 Scene ${s.num} <span style="color:#444;font-size:9px;letter-spacing:1px;">${(s.mood||'').toUpperCase()}</span></div>
       <div class="scene-title">${s.title}</div>
-      <div class="scene-meta">
-        <span class="scene-tag">📍 ${s.location}</span>
-        <span class="scene-tag">🎭 ${s.mood}</span>
-      </div>
+      <div class="scene-meta"><span class="scene-tag">📍 ${s.location}</span></div>
       <div class="scene-desc">${s.what}</div>
-      ${s.imgprompt ? `
-      <div class="img-prompt-box">
-        <div class="img-prompt-label">🎨 Image Generation Prompt</div>
-        <div class="img-prompt-text">${s.imgprompt}</div>
-        <button class="img-copy-btn" onclick="copyPrompt(this, \`${s.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
-      </div>` : ''}
-    </div>
-  `).join('');
+      ${s.prev_connect ? `<div style="font-size:11px;color:#555;margin-top:4px;font-style:italic;">🔗 ${s.prev_connect}</div>` : ''}
+      ${s.imgprompt ? `<button class="img-copy-btn" style="margin-top:8px;" onclick="copyScenePrompt(this)">🖼 Image Prompt Copy</button>` : ''}
+    </div>`;
+  });
+
+  out.innerHTML = html;
+}
+
+function copyScenePrompt(btn) {
+  const card = btn.closest('.scene-card');
+  const prompt = card ? card.getAttribute('data-imgprompt') : '';
+  if (!prompt) { toast('❌ Prompt nahi mila'); return; }
+  navigator.clipboard.writeText(prompt).then(() => {
+    btn.textContent = '✅ Copied!';
+    setTimeout(() => { btn.textContent = '🖼 Image Prompt Copy'; }, 2000);
+  }).catch(() => toast('❌ Copy nahi hua'));
 }
 
 function parseScenes(raw) {
@@ -1936,6 +2024,7 @@ function parseScenes(raw) {
       location: get('location') || '—',
       mood: get('mood') || '—',
       what: get('what') || '—',
+      prev_connect: get('prev_connect') || '',
       imgprompt: get('imgprompt') || '',
     });
   }
