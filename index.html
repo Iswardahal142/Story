@@ -2272,9 +2272,8 @@ async function generateScenes() {
 
 function buildPollinationsUrl(prompt, seed) {
   const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
-  const encoded = encodeURIComponent(fullPrompt);
   const s = seed || Math.floor(Math.random()*99999);
-  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true';
+  return '/api/generate?prompt=' + encodeURIComponent(fullPrompt) + '&width=768&height=432&seed=' + s;
 }
 
 function renderScenes(scenes) {
