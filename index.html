@@ -1197,12 +1197,18 @@ html, body {
     <div class="end-banner-sub" id="endBannerSub">Episode complete!</div>
     <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
       <button class="btn btn-primary" onclick="startNextEpisode()">▶ Next Episode</button>
+      <button class="btn btn-primary" onclick="generateFullNarration()" style="background:linear-gradient(135deg,#005500,#003300);">🎙 Full Narration Generate Karo</button>
       <button class="btn btn-ghost" onclick="goToThumb()">🎨 Thumbnail</button>
       <button class="btn btn-ghost" onclick="goToAnalysis()">🔍 Scene & Characters</button>
       <button class="btn btn-ghost" id="bibleBtn" onclick="generateSeasonBible()">📖 Season Bible</button>
       <button class="btn btn-ghost" onclick="startNextSeason()">🔄 Next Season</button>
     </div>
     <div id="bibleOutput" style="display:none;background:#0a000a;border:1px solid #440044;border-radius:8px;padding:12px;font-size:12px;color:#cc88ff;line-height:1.7;text-align:left;"></div>
+    <div id="narrationOutput" style="display:none;background:#000a00;border:1px solid #004400;border-radius:8px;padding:14px;margin-top:4px;">
+      <div style="font-size:10px;color:#44bb66;letter-spacing:2px;text-transform:uppercase;margin-bottom:10px;">🎙 Full Episode Narration — Hindi</div>
+      <div id="narrationText" style="font-size:14px;color:#c8e8c8;line-height:1.9;white-space:pre-wrap;"></div>
+      <button class="img-copy-btn" onclick="copyNarration()" style="margin-top:12px;border-color:#44bb66;color:#44bb66;">📋 Narration Copy Karo</button>
+    </div>
   </div>
 
 </div>
@@ -1572,18 +1578,19 @@ async function sendContinue(isFirst = false) {
   isGenerating = true;
   setBtnsLoading(true);
 
-  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Tujhe ek gripping, scary Hindi horror story likhni hai jo YouTube ke liye 2D animated cartoon video mein use hogi.
+  const systemPrompt = `Tu ek expert Hindi horror story writer hai. Tujhe ek gripping, scary HINDI horror story likhni hai jo YouTube ke liye 2D animated cartoon video mein use hogi.
 
-RULES:
-- Pure Hindi mein likho (Hinglish allowed, English words natural flow mein thik hain)
-- Har chunk 200-280 words ka hona chahiye
+BAHUT ZAROORI RULES — INHE IGNORE KARNA MANA HAI:
+- SIRF AUR SIRF HINDI DEVANAGARI SCRIPT MEIN LIKHO — ek bhi English sentence nahi
+- Hinglish allowed hai (Roman mein Hindi words) lekin poora sentence English mein BILKUL NAHI
+- Har part SIRF 100-120 words ka hoga — isse zyada nahi
 - Story slowly build karni hai — atmosphere, suspense, dread create karo
-- Emotional descriptions, sensory details (smells, sounds, textures) use karo
-- Pehle chunk mein scene setup karo, characters introduce karo
-- Har chunk ke end mein ek cliffhanger ya mystery chhodo taaki reader aage padhna chahe
+- Sensory details use karo (smells, sounds, feelings)
+- Pehle part mein scene setup karo, characters introduce karo
+- Har part ke end mein ek cliffhanger ya mystery chhodo
 - Story TAB TAK continue karni hai jab tak "STORY END KARO" instruction na mile
-- Kabhi bhi khud story end mat karo — sirf continue karo aur ek hook pe chhodo
-- Dialogues include karo jahan zarurat ho
+- Kabhi bhi khud story end mat karo — sirf continue karo aur hook pe chhodo
+- Dialogues Hindi mein hi likho
 - 2D cartoon animation ke liye visual scenes describe karo${state.seasonBible ? `
 
 PREVIOUS SEASON CONTINUITY (MUST FOLLOW):
@@ -1596,7 +1603,7 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
   const storyContext = state.storyChunks.map((c,i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
 
   if (state.storyChunks.length === 0) {
-    const userMsg = `Story shuru karo:\n\nTitle: ${state.title}\n\n${state.prompt ? 'Prompt/Idea: ' + state.prompt + '\n\n' : ''}Pehla part likho — scene set karo, atmosphere build karo, 1-2 characters introduce karo. Suspense start karo. 200-280 words.`;
+    const userMsg = `Story shuru karo:\n\nTitle: ${state.title}\n\n${state.prompt ? 'Prompt/Idea: ' + state.prompt + '\n\n' : ''}Pehla part likho — scene set karo, atmosphere build karo, 1-2 characters introduce karo. Suspense start karo. SIRF 100-120 words. HINDI MEIN.`;
     messages.push({ role: 'user', content: userMsg });
   } else {
     messages.push({
@@ -1607,8 +1614,8 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
       role: 'assistant',
       content: '[Story continues...]'
     });
-    let nextInstruction = `Story continue karo. Agli part likho (200-280 words). Cliffhanger pe khatam karo.`;
-    if (hint) nextInstruction = `Story continue karo with this direction: "${hint}"\n\n200-280 words. Cliffhanger pe khatam karo.`;
+    let nextInstruction = `Story continue karo. Agli part likho. SIRF 100-120 words. HINDI MEIN LIKHO. Cliffhanger pe khatam karo.`;
+    if (hint) nextInstruction = `Story continue karo with this direction: "${hint}"\n\nSIRF 100-120 words. HINDI MEIN. Cliffhanger pe khatam karo.`;
     messages.push({ role: 'user', content: nextInstruction });
   }
 
@@ -1632,7 +1639,7 @@ Upar diye gaye season bible ke characters, plot, aur cliffhangers ko is season m
           { role: 'system', content: systemPrompt },
           ...messages
         ],
-        max_tokens: 600,
+        max_tokens: 400,
         temperature: 0.88,
         stream: true,
       })
@@ -2365,6 +2372,64 @@ async function generateThumbPrompt() {
 
   btn.disabled = false;
   btn.innerHTML = '✨ AI se Prompt Generate Karo';
+}
+
+// ══ FULL NARRATION GENERATOR ══
+async function generateFullNarration() {
+  if (!state.storyChunks.length) { toast('⚠️ Story nahi hai!'); return; }
+
+  const out = document.getElementById('narrationOutput');
+  const textEl = document.getElementById('narrationText');
+  out.style.display = 'block';
+  textEl.textContent = '';
+
+  // Show loading
+  textEl.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>Narration ban rahi hai...</div>';
+
+  const fullStory = state.storyChunks.map(c => c.text).join('\n\n');
+
+  try {
+    const res = await fetch('/api/ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openai/gpt-4.1-nano',
+        max_tokens: 2000,
+        temperature: 0.7,
+        messages: [
+          {
+            role: 'system',
+            content: `Tu ek professional Hindi horror story narrator hai jo YouTube ke liye voice-over script likhta hai. Teri awaaz mein drama, suspense, aur dard hona chahiye. SIRF HINDI MEIN LIKHO.`
+          },
+          {
+            role: 'user',
+            content: `Yeh horror story hai:\n\n${fullStory}\n\nAb is poori story ka ek smooth, connected HINDI NARRATION script likho jo YouTube voice-over ke liye ready ho.\n\nRULES:\n- SIRF HINDI DEVANAGARI mein likho — ek bhi English sentence nahi\n- Poori story ek flow mein likho bina "Part 1, Part 2" ke\n- Dramatic pauses ke liye "..." use karo\n- Voice-over style — jaise koi bata raha ho\n- Characters ke dialogues naturally include karo\n- Beginning se ending tak connected narrative\n- Koi heading mat lagao, seedha narration shuru karo`
+          }
+        ]
+      })
+    });
+
+    const data = await res.json();
+    const narration = data.choices?.[0]?.message?.content?.trim() || '';
+
+    if (narration) {
+      textEl.textContent = narration;
+      toast('✅ Narration ready!');
+      out.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      textEl.textContent = 'Narration generate nahi hua. Dobara try karo.';
+    }
+  } catch (err) {
+    textEl.textContent = '❌ Error: ' + err.message;
+  }
+}
+
+function copyNarration() {
+  const text = document.getElementById('narrationText').textContent;
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    toast('✅ Narration copied!');
+  }).catch(() => toast('❌ Copy nahi hua'));
 }
 
 // ══ TOAST ══
