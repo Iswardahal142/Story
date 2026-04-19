@@ -2283,7 +2283,6 @@ function renderScenes(scenes) {
     + '<span style="font-size:12px;color:var(--blood);">🎬 ' + totalScenes + ' Scenes</span>'
     + '<span style="font-size:12px;color:var(--bone-dim);">📍 ' + locations + ' Locations</span>'
     + '<span style="font-size:12px;color:var(--green);">🖼 Pollinations AI Images</span>'
-    + '<button onclick="reloadAllImages()" style="margin-left:auto;background:#001a00;border:1px solid #44bb66;color:#44bb66;padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;">🔄 Saari Images Reload Karo</button>'
     + '</div>';
 
   scenes.forEach(function(s, idx) {
@@ -2295,22 +2294,15 @@ function renderScenes(scenes) {
       + '<div class="scene-meta"><span class="scene-tag">📍 ' + s.location + '</span></div>'
       + '<div class="scene-desc">' + s.what + '</div>'
       + (s.prev_connect ? '<div style="font-size:11px;color:#555;margin-top:4px;font-style:italic;">🔗 ' + s.prev_connect + '</div>' : '')
-      + (s.imgprompt ? '<div class="scene-img-wrap" id="' + imgId + '"><div class="scene-img-loading"><div class="spinner"></div>Image load ho rahi hai...</div></div>'
-        + '<button class="scene-img-btn" onclick="regenSceneImg(' + idx + ')">🔄 Dobara Generate</button>'
+      + (s.imgprompt
+        ? '<div class="scene-img-wrap" id="' + imgId + '" style="min-height:unset;background:transparent;border:none;"></div>'
+          + '<button class="scene-img-btn" id="scene-img-btn-' + idx + '" onclick="generateSceneImage(' + idx + ')" style="width:100%;padding:10px;background:#0a0015;border:1px dashed #440066;color:#cc88ff;border-radius:8px;font-size:12px;cursor:pointer;">🖼 Image Generate Karo</button>'
         : '')
       + '</div>';
   });
 
   out.innerHTML = html;
-
-  // Auto load images with delay to avoid rate limiting
-  scenes.forEach(function(s, idx) {
-    if (s.imgprompt) {
-      setTimeout(function() {
-        loadSceneImg(idx, s.imgprompt, idx * 137);
-      }, idx * 2000); // 2 second gap between each image
-    }
-  });
+  // No auto-load — user manually generates each image
 }
 
 function loadSceneImg(idx, prompt, seed) {
@@ -2318,12 +2310,29 @@ function loadSceneImg(idx, prompt, seed) {
   if (!wrap) return;
   const s = (seed !== undefined && seed !== null) ? seed : (idx * 100);
   const url = buildPollinationsUrl(prompt, s);
-  wrap.innerHTML = '<img src="' + url + '" alt="Scene ' + (idx+1) + '" '
-    + 'style="width:100%;display:block;border-radius:8px;" '
-    + 'loading="lazy" '
-    + 'onload="this.parentElement.querySelector(\'.scene-img-loading\') && this.parentElement.querySelector(\'.scene-img-loading\').remove()" '
-    + 'onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'<div class=\\\'scene-img-loading\\\' style=\\\'color:#666;flex-direction:column;gap:8px;\\\'>⚠️ Image load nahi hui<br><button class=\\\'scene-img-btn\\\' style=\\\'margin-top:4px;\\\' onclick=\\\'regenSceneImg(' + idx + ')\\\'>Retry</button></div>\'">'
-    + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
+  const btn = document.getElementById('scene-img-btn-' + idx);
+  const img = document.createElement('img');
+  img.src = url;
+  img.alt = 'Scene ' + (idx + 1);
+  img.style.cssText = 'width:100%;display:block;border-radius:8px;';
+  img.loading = 'lazy';
+  img.onload = function() {
+    wrap.innerHTML = '';
+    wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;';
+    wrap.appendChild(img);
+    const dl = document.createElement('a');
+    dl.href = url;
+    dl.download = 'scene_' + (idx+1) + '.jpg';
+    dl.style.cssText = 'position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;';
+    dl.textContent = '⬇️';
+    wrap.appendChild(dl);
+    // Hide generate button, show regen button
+    if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; }
+  };
+  img.onerror = function() {
+    wrap.innerHTML = '';
+    if (btn) { btn.disabled = false; btn.innerHTML = '⚠️ Error — Retry Karo'; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
+  };
 }
 
 function reloadAllImages() {
@@ -2339,12 +2348,22 @@ function reloadAllImages() {
   });
 }
 
-function regenSceneImg(idx) {
+function generateSceneImage(idx) {
   const scenes = state.savedScenes;
   if (!scenes || !scenes[idx]) return;
+  const btn = document.getElementById('scene-img-btn-' + idx);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;margin-right:6px;vertical-align:middle;"></div> Ban raha hai...'; }
   const wrap = document.getElementById('scene-img-' + idx);
-  if (wrap) wrap.innerHTML = '<div class="scene-img-loading"><div class="spinner"></div>Image load ho rahi hai...</div>';
+  if (wrap) wrap.innerHTML = '';
   loadSceneImg(idx, scenes[idx].imgprompt, Math.floor(Math.random()*99999));
+  // After load, hide button — handled in loadSceneImg via callback
+  setTimeout(function() {
+    if (btn) { btn.disabled = false; btn.innerHTML = '🔄 Dobara Generate Karo'; }
+  }, 8000);
+}
+
+function regenSceneImg(idx) {
+  generateSceneImage(idx);
 }
 
 function copyScenePrompt(btn) {
