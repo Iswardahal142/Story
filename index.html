@@ -2343,7 +2343,7 @@ function loadSceneImg(idx, prompt, seed) {
         toast('⚠️ Rate limit! Dusri key try karo ya thodi der baad aao.');
         throw new Error('__ratelimit__');
       }
-      if (!res.ok) return res.text().then(function(t) { throw new Error(t); });
+      if (!res.ok) return res.text().then(function(t) { throw new Error('HTTP ' + res.status + ': ' + t.slice(0, 120)); });
       return res.blob();
     })
     .then(function(blob) {
