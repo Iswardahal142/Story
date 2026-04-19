@@ -1419,18 +1419,22 @@ async function generateAiStoryIdea() {
         temperature: 0.95,
         messages: [{
           role: 'user',
-          content: `Tu ek Hindi horror story creator hai. Ek BILKUL NAYA aur UNIQUE horror story idea generate kar.
+          content: `You are a Hindi horror story title generator. Generate a unique Hindi horror story.
 
-${genreHint}${avoidList}
+Genre/Setting: ${genreHint}
+${avoidList}
 
-RULES:
-- Title: Catchy Hindi/Hinglish horror title (max 6 words)
-- Plot: 3-4 sentences mein unique story ka setup — characters, setting, mystery
-- Hamesha naya angle lo, clichéd stories avoid karo
-- Aisa plot lo jo pehle YouTube pe nahi suna ho
+STRICT RULES:
+- Title MUST be in Hindi Devanagari script only. Example: "अंधेरे का राज", "काली हवेली", "भूतों की वापसी"
+- Title must be 3-6 Hindi words. NO English words in title.
+- Plot: 3-4 sentences in Hindi Devanagari about the story setup.
+- Both title and plot must be in Hindi Devanagari script only.
 
-Sirf JSON format mein respond karo, koi extra text nahi:
-{"title": "...", "plot": "..."}`
+WRONG title: "The Horror Fair" or "Kaali Raat Ka Raaz"
+RIGHT title: "काली रात का राज" or "भूतों का बदला" or "अंधेरी हवेली का सच"
+
+Respond ONLY in this JSON format, no extra text:
+{"title": "हिंदी शीर्षक यहाँ", "plot": "हिंदी में कहानी का विचार यहाँ"}`
         }]
       })
     });
