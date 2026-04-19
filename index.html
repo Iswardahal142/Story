@@ -1759,7 +1759,7 @@ async function generatePartImagePrompt(chunkEl, storyText, partNum) {
         temperature: 0.7,
         messages: [{
           role: 'user',
-          content: `Yeh Hindi horror story ka ek part hai (Part ${partNum}):\n\n${storyText}\n\nIs scene ke liye ek detailed image generation prompt banao.\n\nRequirements:\n- 2D horror animation / cel-shaded cartoon style\n- Is specific scene ka most dramatic/scary moment capture karo\n- Characters, location, lighting, colors describe karo\n- Dark, atmospheric horror mood\n- English mein prompt do\n- Sirf prompt text, koi explanation nahi, max 80 words`
+          content: `Yeh Hindi horror story ka ek part hai (Part ${partNum}):\n\n${storyText}\n\nIs scene ke liye ek detailed image generation prompt banao.\n\nRequirements:\n- cinematic realistic photography, dark horror style\n- Is specific scene ka most dramatic/scary moment capture karo\n- Characters, location, lighting, colors describe karo\n- Dark, atmospheric horror mood\n- English mein prompt do\n- Sirf prompt text, koi explanation nahi, max 80 words`
         }]
       })
     });
@@ -2271,10 +2271,10 @@ async function generateScenes() {
 }
 
 function buildPollinationsUrl(prompt, seed) {
-  const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
+  const fullPrompt = prompt + ', cinematic realistic photography, dark horror atmosphere, dramatic lighting, ultra detailed, 4K, photorealistic';
   const encoded = encodeURIComponent(fullPrompt);
   const s = seed || Math.floor(Math.random()*99999);
-  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true&enhance=true';
+  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true&enhance=true&model=flux';
 }
 
 function renderScenes(scenes) {
@@ -2432,7 +2432,7 @@ async function generateCharacters() {
         model: 'openai/gpt-4.1-nano',
         messages: [{
           role: 'user',
-          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story mein jo bhi characters hain unki list banao. Har character ke liye EXACTLY yeh format use karo:\n\nCHAR_START\nname: Character ka naam\nrole: Protagonist / Antagonist / Supporting / Supernatural\ndescription: Kaisa dikhta/dikhti hai, uski personality (2-3 lines)\nappearance: Story mein pehli baar kab aaya/aayi (ek line)\nimgprompt: [English only] Detailed image generation prompt for THIS character only. 2D horror animation style, cel-shaded. Describe: physical appearance (age, build, face, hair, eyes, skin), clothing, expression, pose, background hint. Make it detailed for consistent character art.\nCHAR_END\n\nSirf yeh format, koi extra text nahi.`
+          content: `Yeh Hindi horror story hai:\n\n${storyText}\n\nIs story mein jo bhi characters hain unki list banao. Har character ke liye EXACTLY yeh format use karo:\n\nCHAR_START\nname: Character ka naam\nrole: Protagonist / Antagonist / Supporting / Supernatural\ndescription: Kaisa dikhta/dikhti hai, uski personality (2-3 lines)\nappearance: Story mein pehli baar kab aaya/aayi (ek line)\nimgprompt: [English only] Detailed image generation prompt for THIS character only. cinematic realistic photography, dark horror. Describe: physical appearance (age, build, face, hair, eyes, skin), clothing, expression, pose, background hint. Make it detailed for consistent character art.\nCHAR_END\n\nSirf yeh format, koi extra text nahi.`
         }],
         max_tokens: 2000,
         temperature: 0.4,
@@ -2464,7 +2464,7 @@ function renderChars(chars) {
   if (!out) return;
   const roleEmoji = { 'Protagonist': '🦸', 'Antagonist': '👿', 'Supporting': '👤', 'Supernatural': '👻' };
   const allDesc = chars.map(c => `${c.name} (${c.role}): ${c.imgprompt || c.description}`).join(' | ');
-  const combinedPrompt = `Group illustration of all characters together in one frame, 2D horror animation style, cel-shaded, dark atmospheric background. Characters: ${allDesc}. Each character labeled with their name below. Horror anime art style, detailed character design.`;
+  const combinedPrompt = `Group illustration of all characters together in one frame, cinematic realistic photography, dark horror, dark atmospheric background. Characters: ${allDesc}. Each character labeled with their name below. Horror anime art style, detailed character design.`;
 
   out.innerHTML = `
     <div class="img-prompt-box" style="border-color:#8800cc33;background:#0d0015;">
