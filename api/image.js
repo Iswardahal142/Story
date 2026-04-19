@@ -3,22 +3,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  const token = process.env.HF_TOKEN;
+  if (!token) {
+    return res.status(500).json({ error: 'HF_TOKEN not configured on server' });
+  }
+
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const { prompt, hfToken } = req.body || {};
-
-  const token = hfToken || process.env.HF_TOKEN;
-
-  // Debug: log what we received
-  if (!token) {
-    return res.status(401).json({ error: 'HF token missing', hasBody: !!req.body, hasEnv: !!process.env.HF_TOKEN });
-  }
-
-  if (!prompt) {
-    return res.status(400).json({ error: 'prompt missing', hasBody: !!req.body });
-  }
-
   try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ error: 'prompt required' });
+    }
+
     const hfRes = await fetch(
       'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
       {
@@ -61,6 +58,6 @@ export default async function handler(req, res) {
     return res.status(200).send(Buffer.from(imageBuffer));
 
   } catch (err) {
-    return res.status(500).json({ error: err.message, stack: err.stack });
+    return res.status(500).json({ error: err.message });
   }
 }
