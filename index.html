@@ -2300,8 +2300,10 @@ function renderScenes(scenes) {
       + '<div class="scene-desc">' + s.what + '</div>'
       + (s.prev_connect ? '<div style="font-size:11px;color:#555;margin-top:4px;font-style:italic;">🔗 ' + s.prev_connect + '</div>' : '')
       + (s.imgprompt
-        ? '<div class="scene-img-wrap" id="' + imgId + '" style="min-height:unset;background:transparent;border:none;"></div>'
-          + '<button class="scene-img-btn" id="scene-img-btn-' + idx + '" onclick="generateSceneImage(' + idx + ')" style="width:100%;padding:10px;background:#0a0015;border:1px dashed #440066;color:#cc88ff;border-radius:8px;font-size:12px;cursor:pointer;">🖼 Image Generate Karo</button>'
+        ? '<div style="display:flex;gap:8px;margin-top:10px;">'
+          + '<button onclick="copyScenePrompt(this, \"' + safePrompt + '\")" style="flex:1;padding:9px;background:#0a0000;border:1px solid #440000;color:#cc4444;border-radius:8px;font-size:12px;cursor:pointer;">📋 Prompt Copy Karo</button>'
+          + '<button onclick="openImgModal(\"' + safePrompt + '\")" style="flex:1;padding:9px;background:#0a0015;border:1px dashed #440066;color:#cc88ff;border-radius:8px;font-size:12px;cursor:pointer;">🖼 Image Banao</button>'
+          + '</div>'
         : '')
       + '</div>';
   });
@@ -2790,6 +2792,23 @@ const styleDesc = {
   painting: 'dark oil painting style, gothic art, textured brushwork, chiaroscuro lighting, masterpiece quality',
 };
 
+function regenThumbnail(prompt) {
+  const wrap = document.getElementById('thumbImgWrap');
+  if (!wrap) return;
+  const seed = Math.floor(Math.random() * 99999);
+  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1280&height=720&seed=' + seed + '&nologo=true&enhance=true&model=flux';
+  wrap.innerHTML = '<div style="font-size:11px;color:#444;padding:20px;text-align:center;">🎨 Naya thumbnail ban raha hai...</div>';
+  const img = new Image();
+  img.onload = function() {
+    wrap.innerHTML = '<img src="' + url + '" style="width:100%;display:block;border-radius:8px;">'
+      + '<a href="' + url + '" download="thumbnail.jpg" target="_blank" style="display:block;text-align:center;margin-top:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:5px;border-radius:4px;font-size:11px;text-decoration:none;">⬇️ Download Thumbnail</a>';
+  };
+  img.onerror = function() {
+    wrap.innerHTML = '<div style="padding:16px;text-align:center;font-size:11px;color:#cc4444;">❌ Error — Dobara try karo</div>';
+  };
+  img.src = url;
+}
+
 async function generateThumbPrompt() {
   const btn = document.getElementById('genThumbBtn');
   const out = document.getElementById('thumbPromptOut');
@@ -2822,23 +2841,48 @@ async function generateThumbPrompt() {
     if (!prompt) {
       out.innerHTML = '<div class="analysis-empty">Prompt generate nahi hua. Dobara try karo.</div>';
     } else {
+      // Direct Pollinations se image generate karo
+      const seed = Math.floor(Math.random() * 99999);
+      const thumbImgUrl = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1280&height=720&seed=' + seed + '&nologo=true&enhance=true&model=flux';
+
       out.innerHTML = `
         <div class="img-prompt-box" style="background:#050010;border-color:#330066;">
           <div class="img-prompt-label" style="color:#aa66ff;">🖼 ${state.epNum} · ${state.title}</div>
-          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
             <span class="scene-tag">${thumbStyle}</span>
             <span class="scene-tag">${thumbPlat.split(',')[0]}</span>
           </div>
-          <div class="img-prompt-text">${prompt}</div>
-          <button class="img-copy-btn" onclick="copyPrompt(this, \`${prompt.replace(/`/g,"'")}\`)">📋 Copy Prompt</button>
+
+          <!-- Image preview -->
+          <div id="thumbImgWrap" style="width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid #330066;margin-bottom:10px;display:flex;align-items:center;justify-content:center;min-height:100px;">
+            <div style="font-size:11px;color:#444;padding:20px;text-align:center;">🎨 Thumbnail generate ho raha hai...<br><span style="font-size:10px;color:#333;">10-20 sec</span></div>
+          </div>
+
+          <div class="img-prompt-text" style="font-size:11px;color:#555;">${prompt}</div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button class="img-copy-btn" onclick="copyPrompt(this, \`${prompt.replace(/\`/g,"'")}\`)">📋 Copy Prompt</button>
+            <button class="img-copy-btn" onclick="regenThumbnail(\`${prompt.replace(/\`/g,"'")}\`)" style="border-color:#aa66ff;color:#aa66ff;">🔄 Dobara Generate</button>
+          </div>
         </div>
-        <div style="font-size:11px;color:#444;padding:8px 4px;line-height:1.7;">
-          💡 Midjourney: <span style="color:#666;">/imagine [prompt] --ar 16:9 --v 6</span><br>
-          💡 DALL-E 3: <span style="color:#666;">Prompt seedha paste karo</span><br>
-          💡 Stable Diffusion: <span style="color:#666;">Prompt + negative prompt add karo</span>
-        </div>
-        <button class="btn btn-ghost" onclick="generateThumbPrompt()" style="font-size:12px;">🔄 Alag Style Try Karo</button>
       `;
+
+      // Load image
+      const wrap = document.getElementById('thumbImgWrap');
+      const img = new Image();
+      let retries = 0;
+      img.onload = function() {
+        wrap.innerHTML = '<img src="' + thumbImgUrl + '" style="width:100%;display:block;border-radius:8px;">'
+          + '<a href="' + thumbImgUrl + '" download="thumbnail.jpg" target="_blank" style="display:block;text-align:center;margin-top:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:5px;border-radius:4px;font-size:11px;text-decoration:none;">⬇️ Download Thumbnail</a>';
+      };
+      img.onerror = function() {
+        if (retries < 2) {
+          retries++;
+          setTimeout(function() { img.src = thumbImgUrl + '&r=' + retries; }, retries * 3000);
+        } else {
+          wrap.innerHTML = '<div style="padding:16px;text-align:center;font-size:11px;color:#cc4444;">❌ Image load nahi hui — Copy Prompt karke manually generate karo</div>';
+        }
+      };
+      img.src = thumbImgUrl;
     }
   } catch (err) {
     out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
@@ -3051,11 +3095,129 @@ window.addEventListener('load', () => {
   renderSetupEpList();
   updateElFab();
 });
+
+// ══ IMAGE GENERATOR MODAL ══
+function openImgModal(prompt) {
+  document.getElementById('modalPromptInput').value = decodeURIComponent(prompt.replace(/&quot;/g, '"'));
+  document.getElementById('modalResult').style.display = 'none';
+  document.getElementById('modalDownloadWrap').style.display = 'none';
+  document.getElementById('imgGenModal').style.display = 'block';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImgModal() {
+  document.getElementById('imgGenModal').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function copyScenePrompt(btn, prompt) {
+  const text = decodeURIComponent(prompt.replace(/&quot;/g, '"'));
+  navigator.clipboard.writeText(text).then(function() {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✅ Copied!';
+    btn.style.borderColor = '#44bb66';
+    btn.style.color = '#44bb66';
+    setTimeout(function() {
+      btn.innerHTML = orig;
+      btn.style.borderColor = '#440000';
+      btn.style.color = '#cc4444';
+    }, 2000);
+  });
+}
+
+function modalGenerate() {
+  const prompt = document.getElementById('modalPromptInput').value.trim();
+  if (!prompt) { toast('⚠️ Prompt daalo!'); return; }
+
+  const btn = document.getElementById('modalGenBtn');
+  const result = document.getElementById('modalResult');
+  const wrap = document.getElementById('modalImgWrap');
+  const dlWrap = document.getElementById('modalDownloadWrap');
+  const dlBtn = document.getElementById('modalDownloadBtn');
+
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Ban raha hai...';
+  result.style.display = 'block';
+  dlWrap.style.display = 'none';
+  wrap.style.minHeight = '120px';
+  wrap.innerHTML = '<div style="font-size:11px;color:#444;padding:30px;text-align:center;">🎨 Image generate ho rahi hai...<br><span style="font-size:10px;color:#333;">10-20 sec</span></div>';
+
+  const seed = Math.floor(Math.random() * 99999);
+  const url = 'https://image.pollinations.ai/prompt/' + encodeURIComponent(prompt) + '?width=1024&height=576&seed=' + seed + '&nologo=true&enhance=true&model=flux';
+
+  const img = new Image();
+  let retries = 0;
+
+  img.onload = function() {
+    wrap.style.minHeight = 'unset';
+    wrap.innerHTML = '<img src="' + url + '" style="width:100%;display:block;border-radius:10px;">';
+    dlBtn.href = url;
+    dlWrap.style.display = 'block';
+    btn.disabled = false;
+    btn.innerHTML = '✦ Generate Image';
+  };
+
+  img.onerror = function() {
+    if (retries < 2) {
+      retries++;
+      wrap.innerHTML = '<div style="font-size:11px;color:#444;padding:30px;text-align:center;">🔄 Retry ' + retries + '/2...</div>';
+      setTimeout(function() { img.src = url + '&retry=' + retries; }, retries * 3000);
+    } else {
+      wrap.innerHTML = '<div style="padding:20px;text-align:center;font-size:12px;color:#cc4444;">❌ Image load nahi hui. Dobara try karo.</div>';
+      btn.disabled = false;
+      btn.innerHTML = '✦ Generate Image';
+    }
+  };
+
+  img.src = url;
+}
+
+// Modal background tap se band ho
+document.getElementById('imgGenModal').addEventListener('click', function(e) {
+  if (e.target === this) closeImgModal();
+});
+
 </script>
 
 
 
 
+
+
+<!-- ══ IMAGE GENERATOR MODAL ══ -->
+<div id="imgGenModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:9999;overflow-y:auto;">
+  <div style="max-width:600px;margin:0 auto;padding:16px;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid #220000;margin-bottom:16px;">
+      <div style="font-family:'Cinzel Decorative',serif;font-size:14px;color:#ff3333;letter-spacing:2px;">🖼 IMAGE GENERATOR</div>
+      <button onclick="closeImgModal()" style="background:#1a0000;border:1px solid #440000;color:#cc4444;padding:6px 14px;border-radius:6px;font-size:12px;cursor:pointer;">✕ Band Karo</button>
+    </div>
+
+    <!-- Prompt box -->
+    <div style="margin-bottom:12px;">
+      <div style="font-size:10px;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:8px;">PROMPT</div>
+      <textarea id="modalPromptInput" rows="4" style="width:100%;background:#0f0f0f;border:1px solid #330000;color:#e8e0d0;padding:12px;border-radius:8px;font-size:13px;font-family:'Noto Sans Devanagari',sans-serif;resize:vertical;outline:none;line-height:1.6;"></textarea>
+    </div>
+
+    <!-- Generate button -->
+    <button onclick="modalGenerate()" id="modalGenBtn" style="width:100%;padding:14px;background:linear-gradient(135deg,#cc0000,#880000);border:none;border-radius:10px;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:16px;letter-spacing:1px;">
+      ✦ Generate Image
+    </button>
+
+    <!-- Result -->
+    <div id="modalResult" style="display:none;">
+      <div id="modalImgWrap" style="width:100%;border-radius:10px;overflow:hidden;background:#0a0000;border:1px solid #330000;min-height:120px;display:flex;align-items:center;justify-content:center;">
+        <div style="font-size:11px;color:#444;padding:20px;text-align:center;">🎨 Ban raha hai...</div>
+      </div>
+      <div id="modalDownloadWrap" style="margin-top:10px;display:none;">
+        <a id="modalDownloadBtn" href="#" download="scene-image.jpg" target="_blank" style="display:block;text-align:center;background:#0a0000;border:1px solid #440000;color:#cc4444;padding:10px;border-radius:8px;font-size:13px;text-decoration:none;">⬇️ Download Image</a>
+      </div>
+      <button onclick="modalGenerate()" style="width:100%;margin-top:8px;padding:10px;background:transparent;border:1px solid #333;color:#666;border-radius:8px;font-size:12px;cursor:pointer;">🔄 Dobara Generate Karo</button>
+    </div>
+
+  </div>
+</div>
 
 </body>
 </html>
