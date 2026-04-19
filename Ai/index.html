@@ -301,13 +301,7 @@
     <p class="subtitle">Powered by FLUX.1 via Hugging Face</p>
   </header>
 
-  <!-- API KEY -->
-  <div class="card">
-    <label>🔑 Hugging Face Token</label>
-    <input type="password" id="apiKey" placeholder="hf_..." autocomplete="off" />
-  </div>
-
-  <!-- PROMPT -->
+    <!-- PROMPT -->
   <div class="card">
     <label>✏️ Prompt</label>
     <textarea id="prompt" placeholder="Describe the image you want to generate..."></textarea>
@@ -345,6 +339,17 @@
 function setPrompt(text) {
   document.getElementById('prompt').value = text;
 }
+
+// URL param se prompt auto-fill
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const p = params.get('prompt');
+  if (p) {
+    window.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('prompt').value = p;
+    });
+  }
+})();
 
 async function generate() {
   const apiKey = document.getElementById('apiKey').value.trim();
