@@ -2307,32 +2307,27 @@ function renderScenes(scenes) {
 
 function loadSceneImg(idx, prompt, seed) {
   const wrap = document.getElementById('scene-img-' + idx);
+  const btn = document.getElementById('scene-img-btn-' + idx);
   if (!wrap) return;
   const s = (seed !== undefined && seed !== null) ? seed : (idx * 100);
   const url = buildPollinationsUrl(prompt, s);
-  const btn = document.getElementById('scene-img-btn-' + idx);
-  const img = document.createElement('img');
-  img.src = url;
-  img.alt = 'Scene ' + (idx + 1);
-  img.style.cssText = 'width:100%;display:block;border-radius:8px;';
-  img.loading = 'lazy';
-  img.onload = function() {
-    wrap.innerHTML = '';
-    wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;';
-    wrap.appendChild(img);
-    const dl = document.createElement('a');
-    dl.href = url;
-    dl.download = 'scene_' + (idx+1) + '.jpg';
-    dl.style.cssText = 'position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;';
-    dl.textContent = '⬇️';
-    wrap.appendChild(dl);
-    // Hide generate button, show regen button
-    if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; }
-  };
-  img.onerror = function() {
-    wrap.innerHTML = '';
-    if (btn) { btn.disabled = false; btn.innerHTML = '⚠️ Error — Retry Karo'; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
-  };
+
+  fetch(url)
+    .then(function(res) {
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      return res.blob();
+    })
+    .then(function(blob) {
+      const blobUrl = URL.createObjectURL(blob);
+      wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;display:block;';
+      wrap.innerHTML = '<img src="' + blobUrl + '" style="width:100%;display:block;border-radius:8px;">'
+        + '<a href="' + blobUrl + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
+      if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; btn.style.borderColor = '#440066'; btn.style.color = '#cc88ff'; }
+    })
+    .catch(function(err) {
+      wrap.innerHTML = '';
+      if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
+    });
 }
 
 function reloadAllImages() {
