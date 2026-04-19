@@ -1490,8 +1490,9 @@ html, body {
 
     <!-- Tab bar -->
     <div class="analysis-tabs">
-      <button class="atab active" id="tabScenes" onclick="switchTab('scenes')">🎬 Scene Breakdown</button>
+      <button class="atab active" id="tabScenes" onclick="switchTab('scenes')">🎬 Scenes</button>
       <button class="atab" id="tabChars" onclick="switchTab('chars')">👤 Characters</button>
+      <button class="atab" id="tabEl" onclick="switchTab('el')">🎙 Audio</button>
     </div>
 
     <!-- Scenes Panel -->
@@ -1514,6 +1515,29 @@ html, body {
         </button>
       </div>
       <div id="charsOutput"></div>
+    </div>
+
+    <!-- ElevenLabs Panel -->
+    <div class="analysis-panel" id="panelEl" style="display:none;">
+      <div class="analysis-generate-bar" style="background:#0d0015;border-color:#330044;">
+        <div style="font-size:10px;color:#cc88ff;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🎙 ElevenLabs API Keys</div>
+        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — limit khatam hone par auto-switch hoga 🔄</div>
+        <div id="elActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
+          <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
+          <div id="elActiveKeyName" style="font-size:12px;color:#c8e8c8;font-family:monospace;"></div>
+        </div>
+        <div id="elKeysList"></div>
+        <div class="el-add-form">
+          <div style="font-size:10px;color:#cc88ff;letter-spacing:2px;text-transform:uppercase;">➕ API Key Add Karo</div>
+          <input class="el-add-input" id="elNewKeyInput" type="password" placeholder="sk_... ElevenLabs API Key">
+          <input class="el-add-input" id="elNewKeyName" type="text" placeholder="Label (e.g. Account 1)" style="font-family:'Noto Sans Devanagari',sans-serif;">
+          <button class="btn btn-primary" onclick="addElApiKey()" style="font-size:12px;padding:10px;background:linear-gradient(135deg,#6600aa,#330066);">➕ Add Key</button>
+        </div>
+        <div style="font-size:10px;color:#333;line-height:1.6;padding:4px;">
+          💡 ElevenLabs → Profile → API Keys se key milti hai<br>
+          💡 Free plan: 10,000 chars/month per account
+        </div>
+      </div>
     </div>
 
   </div>
@@ -2112,8 +2136,11 @@ function goToAnalysis() {
 function switchTab(tab) {
   document.getElementById('tabScenes').classList.toggle('active', tab === 'scenes');
   document.getElementById('tabChars').classList.toggle('active', tab === 'chars');
+  document.getElementById('tabEl').classList.toggle('active', tab === 'el');
   document.getElementById('panelScenes').style.display = tab === 'scenes' ? 'flex' : 'none';
   document.getElementById('panelChars').style.display = tab === 'chars' ? 'flex' : 'none';
+  document.getElementById('panelEl').style.display = tab === 'el' ? 'flex' : 'none';
+  if (tab === 'el') renderElKeys();
 }
 
 // ══ EXTRACT CHARACTER BIBLE (auto, silent) ══
@@ -2223,8 +2250,10 @@ async function generateScenes() {
 }
 
 function buildPollinationsUrl(prompt, seed) {
-  const encoded = encodeURIComponent(prompt + ', 2D horror animation, dark atmospheric, cel-shaded');
-  return 'https://image.pollinations.ai/prompt/' + encoded + '?width=768&height=432&seed=' + (seed || Math.floor(Math.random()*99999)) + '&nologo=true&enhance=true';
+  const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
+  const encoded = encodeURIComponent(fullPrompt);
+  const s = seed || Math.floor(Math.random()*99999);
+  return 'https://pollinations.ai/p/' + encoded + '?width=768&height=432&seed=' + s + '&nologo=true&model=flux';
 }
 
 function renderScenes(scenes) {
@@ -2938,22 +2967,12 @@ function renderElKeys() {
   }).join('');
 }
 function openElSidebar() {
-  renderElKeys();
-  document.getElementById('elSidebar').classList.add('open');
-  document.getElementById('elOverlay').classList.add('open');
+  // Sidebar hataya — Analysis > Audio tab pe redirect
+  goToAnalysis();
+  setTimeout(function() { switchTab('el'); }, 100);
 }
-function closeElSidebar() {
-  document.getElementById('elSidebar').classList.remove('open');
-  document.getElementById('elOverlay').classList.remove('open');
-}
+function closeElSidebar() { /* no-op */ }
 function updateElFab() {
-  const fab = document.getElementById('elFab');
-  if (!fab) return;
-  const storyEl = document.getElementById('screenStory');
-  const analysisEl = document.getElementById('screenAnalysis');
-  const onStory = storyEl && storyEl.classList.contains('active');
-  const onAnalysis = analysisEl && analysisEl.classList.contains('active');
-  fab.style.display = (onStory || onAnalysis) ? 'flex' : 'none';
   renderElKeys();
 }
 async function generateElevenLabsAudio() {
@@ -3034,50 +3053,9 @@ window.addEventListener('load', () => {
 });
 </script>
 
-<!-- ══════ ELEVENLABS API SIDEBAR ══════ -->
-<div class="el-sidebar-overlay" id="elOverlay" onclick="closeElSidebar()"></div>
 
-<div class="el-sidebar" id="elSidebar">
-  <div class="el-sidebar-header">
-    <span class="el-sidebar-title">🎙 ElevenLabs APIs</span>
-    <button class="btn btn-icon" onclick="closeElSidebar()" style="color:#888;">✕</button>
-  </div>
-  <div class="el-sidebar-body">
 
-    <div style="font-size:11px;color:#666;line-height:1.6;">
-      Multiple API keys add karo. Jab ek ka limit khatam hoga, automatically next use hoga. 🔄
-    </div>
 
-    <!-- Active key indicator -->
-    <div id="elActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
-      <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
-      <div id="elActiveKeyName" style="font-size:12px;color:#c8e8c8;font-family:monospace;"></div>
-    </div>
-
-    <!-- API Keys list -->
-    <div id="elKeysList"></div>
-
-    <!-- Add new key form -->
-    <div class="el-add-form">
-      <div style="font-size:10px;color:#cc88ff;letter-spacing:2px;text-transform:uppercase;">➕ API Key Add Karo</div>
-      <input class="el-add-input" id="elNewKeyInput" type="password" placeholder="sk_... ElevenLabs API Key">
-      <input class="el-add-input" id="elNewKeyName" type="text" placeholder="Label (e.g. Account 1)" style="font-family:'Noto Sans Devanagari',sans-serif;">
-      <button class="btn btn-primary" onclick="addElApiKey()" style="font-size:12px;padding:10px;">➕ Add Key</button>
-    </div>
-
-    <div style="font-size:10px;color:#333;line-height:1.6;padding:4px;">
-      💡 ElevenLabs → Profile → API Keys se key milti hai<br>
-      💡 Free plan: 10,000 chars/month per account
-    </div>
-
-  </div>
-</div>
-
-<!-- ElevenLabs FAB button (only on story/analysis screens) -->
-<button class="el-fab" id="elFab" onclick="openElSidebar()" style="display:none;" title="ElevenLabs API Keys">
-  🎙
-  <span class="el-fab-badge" id="elFabBadge">0</span>
-</button>
 
 </body>
 </html>
