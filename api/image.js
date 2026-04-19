@@ -5,15 +5,17 @@ export default async function handler(req, res) {
 
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  const { prompt, hfToken } = req.body;
-
-  if (!prompt) {
-    return res.status(400).json({ error: 'prompt required hai' });
-  }
+  const { prompt, hfToken } = req.body || {};
 
   const token = hfToken || process.env.HF_TOKEN;
+
+  // Debug: log what we received
   if (!token) {
-    return res.status(401).json({ error: 'HuggingFace token nahi mila' });
+    return res.status(401).json({ error: 'HF token missing', hasBody: !!req.body, hasEnv: !!process.env.HF_TOKEN });
+  }
+
+  if (!prompt) {
+    return res.status(400).json({ error: 'prompt missing', hasBody: !!req.body });
   }
 
   try {
@@ -59,6 +61,6 @@ export default async function handler(req, res) {
     return res.status(200).send(Buffer.from(imageBuffer));
 
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message, stack: err.stack });
   }
 }
