@@ -1451,9 +1451,9 @@ html, body {
     <span class="topbar-logo">☠ KAALI RAAT</span>
     <span class="topbar-ep" id="topbarEp">EP 01</span>
     <div class="topbar-actions">
-      <button class="btn btn-icon" title="Analysis" onclick="goToAnalysis()">🔍</button>
+      <button class="btn btn-icon" title="HF Settings" onclick="goToAnalysis(); setTimeout(()=>switchTab('el'),150)">⚙️</button>
       <button class="btn btn-icon" title="Thumbnail" onclick="goToThumb()">🎨</button>
-      <button class="btn btn-icon" title="YouTube Export" onclick="goToYtExport()" style="color:#ff4444;">▶</button>
+      <button class="btn btn-icon" title="YouTube Export" onclick="goToYtExport()" style="color:#ff4444;font-size:14px;font-weight:700;">YT</button>
       <button class="btn btn-icon" title="Save" onclick="saveCurrentEpisode()">💾</button>
     </div>
   </div>
@@ -1592,7 +1592,6 @@ html, body {
     <div class="analysis-tabs">
       <button class="atab active" id="tabScenes" onclick="switchTab('scenes')">🎬 Scenes</button>
       <button class="atab" id="tabChars" onclick="switchTab('chars')">👤 Characters</button>
-      <button class="atab" id="tabEl" onclick="switchTab('el')">🎨 Image API</button>
       <button class="atab" id="tabYt" onclick="switchTab('yt')" style="background:linear-gradient(135deg,#1a0000,#0a0000);border:1px solid #cc0000;color:#ff4444;border-radius:8px;position:relative;">▶ YT Export</button>
     </div>
 
@@ -2324,7 +2323,6 @@ function goToAnalysis() {
 function switchTab(tab) {
   document.getElementById('tabScenes').classList.toggle('active', tab === 'scenes');
   document.getElementById('tabChars').classList.toggle('active', tab === 'chars');
-  document.getElementById('tabEl').classList.toggle('active', tab === 'el');
   document.getElementById('tabYt').classList.toggle('active', tab === 'yt');
   document.getElementById('panelScenes').style.display = tab === 'scenes' ? 'flex' : 'none';
   document.getElementById('panelChars').style.display = tab === 'chars' ? 'flex' : 'none';
