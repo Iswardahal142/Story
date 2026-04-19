@@ -2303,9 +2303,13 @@ function renderScenes(scenes) {
 
   out.innerHTML = html;
 
-  // Auto load images for all scenes
+  // Auto load images with delay to avoid rate limiting
   scenes.forEach(function(s, idx) {
-    if (s.imgprompt) loadSceneImg(idx, s.imgprompt, idx * 100);
+    if (s.imgprompt) {
+      setTimeout(function() {
+        loadSceneImg(idx, s.imgprompt, idx * 137);
+      }, idx * 2000); // 2 second gap between each image
+    }
   });
 }
 
@@ -2325,10 +2329,14 @@ function loadSceneImg(idx, prompt, seed) {
 function reloadAllImages() {
   const scenes = state.savedScenes;
   if (!scenes) return;
+  toast('🔄 Saari images reload ho rahi hain (thoda time lagega)...');
   scenes.forEach(function(s, idx) {
-    if (s.imgprompt) loadSceneImg(idx, s.imgprompt, Math.floor(Math.random()*99999));
+    if (s.imgprompt) {
+      setTimeout(function() {
+        loadSceneImg(idx, s.imgprompt, Math.floor(Math.random()*99999));
+      }, idx * 2000);
+    }
   });
-  toast('🔄 Saari images reload ho rahi hain...');
 }
 
 function regenSceneImg(idx) {
