@@ -2314,80 +2314,29 @@ function loadSceneImg(idx, prompt, seed) {
   const wrap = document.getElementById('scene-img-' + idx);
   const btn = document.getElementById('scene-img-btn-' + idx);
   if (!wrap) return;
-  const activeKey = getActiveTogetherKey();
-  if (activeKey) {
-    // /api/image proxy ke through HF call (CORS fix)
-    const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded, high quality';
-    fetch('/api/image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: fullPrompt })
-    })
-    .then(function(res) {
-      if (res.status === 503) {
-        // Model loading — parse estimated_time and retry
-        return res.json().then(function(j) {
-          const waitSec = j.estimated_time ? Math.ceil(j.estimated_time) + 5 : 25;
-          if (btn) { btn.innerHTML = '⏳ Model load ho rahi hai... (' + waitSec + 's)'; btn.disabled = true; }
-          setTimeout(function() { loadSceneImg(idx, prompt, seed); }, waitSec * 1000);
-          throw new Error('__loading__');
-        });
-      }
-      if (res.status === 401 || res.status === 403) {
-        markTogetherKeyExhausted(activeKey.key);
-        toast('⚠️ HF Token invalid ya expired! Image API tab mein check karo.');
-        throw new Error('__auth__');
-      }
-      if (res.status === 429) {
-        markTogetherKeyExhausted(activeKey.key);
-        toast('⚠️ Rate limit! Dusri key try karo ya thodi der baad aao.');
-        throw new Error('__ratelimit__');
-      }
-      if (!res.ok) return res.text().then(function(t) { throw new Error('HTTP ' + res.status + ': ' + t.slice(0, 120)); });
-      return res.blob();
-    })
-    .then(function(blob) {
-      if (!blob) return; // loading retry case
-      const blobUrl = URL.createObjectURL(blob);
-      // Track usage
-      const keys = getTogetherKeys();
-      const k = keys.find(function(k) { return k.key === activeKey.key; });
-      if (k) { k.imagesUsed = (k.imagesUsed || 0) + 1; saveTogetherKeys(keys); renderTogetherKeys(); }
-      wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;display:block;';
-      wrap.innerHTML = '<img src="' + blobUrl + '" style="width:100%;display:block;border-radius:8px;">'
-        + '<a href="' + blobUrl + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
-      if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; btn.style.borderColor = '#443300'; btn.style.color = '#ffaa00'; }
-    })
-    .catch(function(err) {
-      const msg = err.message || '';
-      if (msg === '__loading__' || msg === '__auth__' || msg === '__ratelimit__') return; // already handled
-      if (msg.includes('quota') || msg.includes('limit') || msg.includes('unauthorized') || msg.includes('Invalid')) {
-        markTogetherKeyExhausted(activeKey.key);
-        toast('⚠️ Key limit khatam! Image API tab mein check karo.');
-      } else {
-        toast('❌ Image error: ' + msg.slice(0, 80));
-      }
-      wrap.innerHTML = '';
-      if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
-    });
-  } else {
-    // Fallback: Pollinations
-    const s = (seed !== undefined && seed !== null) ? seed : (idx * 100);
-    const url = buildPollinationsUrl(prompt, s);
-    fetch(url)
-      .then(function(res) { if (!res.ok) throw new Error('HTTP ' + res.status); return res.blob(); })
-      .then(function(blob) {
-        const blobUrl = URL.createObjectURL(blob);
-        wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;display:block;';
-        wrap.innerHTML = '<img src="' + blobUrl + '" style="width:100%;display:block;border-radius:8px;">'
-          + '<a href="' + blobUrl + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
-        if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; }
-      })
-      .catch(function() {
-        wrap.innerHTML = '';
-        if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
-      });
-  }
+
+  // Pollinations AI — free, no API key, no CORS issue
+  const s = (seed !== undefined && seed !== null) ? seed : Math.floor(Math.random()*99999);
+  const url = buildPollinationsUrl(prompt, s);
+
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span style="opacity:0.6">⏳ Ban rahi hai...</span>'; }
+  wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;display:flex;align-items:center;justify-content:center;min-height:80px;';
+  wrap.innerHTML = '<div style="font-size:11px;color:#444;padding:20px;text-align:center;">🎨 Image generate ho rahi hai...<br><span style="font-size:10px;color:#333;">10-20 sec</span></div>';
+
+  const img = new Image();
+  img.onload = function() {
+    wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;display:block;';
+    wrap.innerHTML = '<img src="' + url + '" style="width:100%;display:block;border-radius:8px;">'
+      + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" target="_blank" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
+    if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; btn.style.borderColor = '#443300'; btn.style.color = '#ffaa00'; }
+  };
+  img.onerror = function() {
+    wrap.innerHTML = '';
+    wrap.style.cssText = '';
+    if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
+    toast('❌ Image load nahi hui, retry karo');
+  };
+  img.src = url;
 }
 
 function reloadAllImages() {
