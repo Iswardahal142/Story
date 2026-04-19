@@ -915,8 +915,8 @@ html, body {
 
 /* Image Prompt Box */
 .img-prompt-box {
-  background: #0a0a00;
-  border: 1px solid #333300;
+  background: #0a000f;
+  border: 1px solid #2a003a;
   border-radius: 8px;
   padding: 12px;
   display: flex;
@@ -928,13 +928,15 @@ html, body {
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: var(--ember);
+  color: #bb66ff;
+  font-family: 'Noto Sans Devanagari', sans-serif;
 }
 .img-prompt-text {
   font-size: 12px;
-  color: #c8b870;
-  line-height: 1.6;
-  font-family: monospace;
+  color: #c8c8c8;
+  line-height: 1.7;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  letter-spacing: 0.2px;
 }
 .img-copy-btn {
   background: #1a1a00;
@@ -2129,8 +2131,8 @@ function renderChars(chars) {
       <div class="char-desc">${c.description}</div>
       <div class="char-appear">📍 ${c.appearance}</div>
       ${c.imgprompt ? `
-      <div class="img-prompt-box">
-        <div class="img-prompt-label">🎨 Character Image Prompt</div>
+      <div class="img-prompt-box" style="background:#08000f;border-color:#3a0055;">
+        <div class="img-prompt-label" style="color:#cc88ff;">🎨 Character Image Prompt</div>
         <div class="img-prompt-text">${c.imgprompt}</div>
         <button class="img-copy-btn" onclick="copyPrompt(this, \`${c.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
       </div>` : ''}
