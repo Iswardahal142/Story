@@ -1075,7 +1075,7 @@ html, body {
     <div class="card-block" id="aiGenCard">
       <div class="card-title">🤖 AI Story Generator</div>
       <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">
-        AI khud ek unique horror story ka <strong style="color:var(--bone);">title</strong> aur <strong style="color:var(--bone);">plot</strong> generate karega — jo pehle kabhi nahi bana ho.
+        AI खुद एक unique horror story का <strong style="color:var(--bone);">शीर्षक</strong> generate करेगा — जो पहले कभी नहीं बना हो।
       </div>
 
       <!-- Genre chips -->
@@ -1446,6 +1446,38 @@ Respond ONLY in this JSON format, no extra text:
     generatedTitle = parsed.title || '';
     generatedPrompt = parsed.plot || '';
 
+    // Check if title has Devanagari characters
+    const hasDevanagari = /[ऀ-ॿ]/.test(generatedTitle);
+    if (!hasDevanagari && generatedTitle) {
+      // Title is not in Devanagari — auto retry once
+      toast('🔄 Hindi mein convert ho raha hai...');
+      const retryRes = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o-mini',
+          max_tokens: 150,
+          temperature: 0.5,
+          messages: [{
+            role: 'user',
+            content: `Convert this story title to Hindi Devanagari script: "${generatedTitle}"
+Also convert this plot summary to Hindi Devanagari: "${generatedPrompt}"
+
+Respond ONLY in JSON: {"title": "देवनागरी शीर्षक", "plot": "देवनागरी में कहानी"}
+No English. Pure Devanagari only.`
+          }]
+        })
+      });
+      const retryData = await retryRes.json();
+      const retryRaw = retryData.choices?.[0]?.message?.content?.trim() || '';
+      const retryClean = retryRaw.replace(/\`\`\`json|\`\`\`/g, '').trim();
+      try {
+        const retryParsed = JSON.parse(retryClean);
+        if (retryParsed.title) generatedTitle = retryParsed.title;
+        if (retryParsed.plot) generatedPrompt = retryParsed.plot;
+      } catch(e) {}
+    }
+
     if (generatedTitle && generatedPrompt) {
       document.getElementById('genTitlePreview').textContent = generatedTitle;
       document.getElementById('aiGenPreview').style.display = 'block';
@@ -1605,7 +1637,7 @@ ${state.seasonBible}` : ''}`;
   const storyContext = state.storyChunks.map((c,i) => `[Part ${i+1}]:\n${c.text}`).join('\n\n');
 
   if (state.storyChunks.length === 0) {
-    const userMsg = `हिंदी देवनागरी में लिखो। एक भी English sentence मत लिखो।\n\nकहानी का शीर्षक: ${state.title}\n\n${state.prompt ? 'कहानी का विचार: ' + state.prompt + '\n\n' : ''}पहला भाग लिखो — scene set करो, 1-2 characters introduce करो, suspense शुरू करो। सिर्फ 100-120 Hindi words। हिंदी देवनागरी में।`;
+    const userMsg = `केवल हिंदी देवनागरी लिपि में लिखो। अंग्रेज़ी का एक भी शब्द नहीं।\n\n${state.prompt ? 'कहानी का विचार: ' + state.prompt + '\n\n' : ''}पहला भाग लिखो — दृश्य तैयार करो, 1-2 पात्र introduce करो, रहस्य शुरू करो। सिर्फ 100-120 शब्द। हिंदी देवनागरी में।`;
     messages.push({ role: 'user', content: userMsg });
   } else {
     messages.push({
