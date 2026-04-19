@@ -1522,7 +1522,7 @@ html, body {
     <div class="analysis-panel" id="panelEl" style="display:none;">
       <div class="analysis-generate-bar" style="background:#0a0a00;border-color:#443300;">
         <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🎨 Hugging Face — Image API Keys</div>
-        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — ek ka limit hone par auto-switch hoga 🔄<br>Unlimited free images (Stable Diffusion XL)</div>
+        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — ek ka limit hone par auto-switch hoga 🔄<br>Fast free images (FLUX.1-schnell — better quality, faster)</div>
 
         <div id="togetherActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
           <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
@@ -2316,18 +2316,42 @@ function loadSceneImg(idx, prompt, seed) {
   if (!wrap) return;
   const activeKey = getActiveTogetherKey();
   if (activeKey) {
-    // Hugging Face Inference API
+    // Hugging Face Inference API — FLUX.1-schnell (fast, free, high quality)
     const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded, high quality';
-    fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
+    fetch('https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell', {
       method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + activeKey.key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ inputs: fullPrompt, parameters: { width: 768, height: 432, num_inference_steps: 30 } })
+      headers: {
+        'Authorization': 'Bearer ' + activeKey.key,
+        'Content-Type': 'application/json',
+        'x-use-cache': 'false'
+      },
+      body: JSON.stringify({ inputs: fullPrompt })
     })
     .then(function(res) {
+      if (res.status === 503) {
+        // Model loading — parse estimated_time and retry
+        return res.json().then(function(j) {
+          const waitSec = j.estimated_time ? Math.ceil(j.estimated_time) + 5 : 25;
+          if (btn) { btn.innerHTML = '⏳ Model load ho rahi hai... (' + waitSec + 's)'; btn.disabled = true; }
+          setTimeout(function() { loadSceneImg(idx, prompt, seed); }, waitSec * 1000);
+          throw new Error('__loading__');
+        });
+      }
+      if (res.status === 401 || res.status === 403) {
+        markTogetherKeyExhausted(activeKey.key);
+        toast('⚠️ HF Token invalid ya expired! Image API tab mein check karo.');
+        throw new Error('__auth__');
+      }
+      if (res.status === 429) {
+        markTogetherKeyExhausted(activeKey.key);
+        toast('⚠️ Rate limit! Dusri key try karo ya thodi der baad aao.');
+        throw new Error('__ratelimit__');
+      }
       if (!res.ok) return res.text().then(function(t) { throw new Error(t); });
       return res.blob();
     })
     .then(function(blob) {
+      if (!blob) return; // loading retry case
       const blobUrl = URL.createObjectURL(blob);
       // Track usage
       const keys = getTogetherKeys();
@@ -2340,17 +2364,12 @@ function loadSceneImg(idx, prompt, seed) {
     })
     .catch(function(err) {
       const msg = err.message || '';
-      if (msg.includes('loading') || msg.includes('estimated_time')) {
-        // Model warm up ho rahi hai — retry after 20s
-        if (btn) { btn.innerHTML = '⏳ Model load ho rahi hai... (20s)'; btn.disabled = true; }
-        setTimeout(function() { loadSceneImg(idx, prompt, seed); }, 20000);
-        return;
-      }
+      if (msg === '__loading__' || msg === '__auth__' || msg === '__ratelimit__') return; // already handled
       if (msg.includes('quota') || msg.includes('limit') || msg.includes('unauthorized') || msg.includes('Invalid')) {
         markTogetherKeyExhausted(activeKey.key);
-        toast('⚠️ Key invalid ya limit khatam! Image API tab mein check karo.');
+        toast('⚠️ Key limit khatam! Image API tab mein check karo.');
       } else {
-        toast('❌ Error: ' + msg.slice(0, 80));
+        toast('❌ Image error: ' + msg.slice(0, 80));
       }
       wrap.innerHTML = '';
       if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
