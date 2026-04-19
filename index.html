@@ -670,6 +670,42 @@ html, body {
 
 .ep-empty { padding:20px; text-align:center; font-size:12px; color:#333; }
 
+/* Story Cards */
+.ep-list-body { display:flex; flex-direction:column; gap:8px; padding:8px; }
+.story-card {
+  background: var(--panel2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: border-color 0.2s, background 0.15s;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.story-card:hover { border-color: var(--blood); background: #120000; }
+.story-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--bone);
+  padding-right: 28px;
+  line-height: 1.3;
+}
+.story-card-meta { display:flex; flex-wrap:wrap; gap:5px; }
+.story-card-words { font-size:11px; color:#444; margin-top:2px; }
+.story-card .ep-row-del {
+  position: absolute;
+  top: 10px; right: 10px;
+  background: transparent;
+  border: none;
+  color: #333;
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px;
+}
+.story-card .ep-row-del:hover { color: var(--blood); }
+
 /* ══ TOAST ══ */
 .toast {
   position: fixed;
@@ -1017,37 +1053,23 @@ html, body {
       <span class="brand-tagline">Horror Story Studio</span>
     </div>
 
-    <!-- API Key (hidden - hardcoded) -->
-    <div class="card-block" style="display:none;">
-      <div class="card-title">🔑 OpenRouter API Key</div>
-      <div class="field">
-        <label>Apni API Key daalein</label>
-        <input type="password" id="apiKeyInput" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false">
-      </div>
-      <div class="api-hint">
-        Free key milegi → <a href="https://openrouter.ai/keys" target="_blank">openrouter.ai/keys</a><br>
-        Key sirf is device par save hogi, kahi nahi jayegi ✓
-      </div>
+    <!-- hidden inputs kept for compatibility -->
+    <div style="display:none;">
+      <input id="apiKeyInput">
+      <input id="cfgSeason">
+      <input id="cfgEp">
     </div>
 
-    <!-- Episode Config -->
+    <!-- Basic Config -->
     <div class="card-block">
-      <div class="card-title">🎬 Episode Setup</div>
+      <div class="card-title">🎬 Setup</div>
       <div class="field">
         <label>Channel Name</label>
         <input type="text" id="cfgChannel" value="KAALI RAAT" maxlength="20">
       </div>
       <div class="field">
-        <label>Season</label>
-        <input type="text" id="cfgSeason" value="SEASON 1" maxlength="15">
-      </div>
-      <div class="field">
-        <label>Episode Number</label>
-        <input type="text" id="cfgEp" value="EP 01" maxlength="10">
-      </div>
-      <div class="field">
         <label>Story Title (Hindi mein)</label>
-        <input type="text" id="cfgTitle" value="पुरानी हवेली का राज" maxlength="50">
+        <input type="text" id="cfgTitle" placeholder="पुरानी हवेली का राज" maxlength="50">
       </div>
     </div>
 
@@ -1074,20 +1096,20 @@ html, body {
 
     <!-- Link Previous Season -->
     <div class="card-block" id="linkSeasonBlock" style="display:none;">
-      <div class="card-title">🔗 Previous Season Link</div>
+      <div class="card-title">🔗 Previous Season Linked</div>
       <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">Pichle season se characters aur story consistent rahegi.</div>
       <div id="linkSeasonList"></div>
       <button class="btn btn-ghost" style="font-size:12px;" onclick="clearLinkedSeason()">✕ Link Hatao</button>
     </div>
 
-    <!-- Saved Episodes -->
+    <!-- Saved Stories -->
     <div class="ep-list-section" id="savedEpSection">
       <div class="ep-list-header">
-        <span>📋 Saved Episodes</span>
+        <span>📚 Saved Stories</span>
         <span id="epCountBadge" style="color:var(--bone-dim);font-size:11px;"></span>
       </div>
       <div class="ep-list-body" id="setupEpList">
-        <div class="ep-empty">Koi episode save nahi hua abhi</div>
+        <div class="ep-empty">Koi story save nahi hua abhi</div>
       </div>
     </div>
 
@@ -1158,138 +1180,57 @@ html, body {
   <!-- End story banner -->
   <div class="end-banner" id="endBanner" style="margin:0 16px 16px;">
     <div class="end-banner-title">🩸 The End 🩸</div>
-    <div class="end-banner-sub">Story complete! Ab kya karna hai?</div>
+    <div class="end-banner-sub" id="endBannerSub">Episode complete!</div>
     <div class="btn-row" style="flex-wrap:wrap;gap:8px;">
-      <button class="btn btn-primary" onclick="goToThumb()">🎨 Thumbnail</button>
+      <button class="btn btn-primary" onclick="startNextEpisode()">▶ Next Episode</button>
+      <button class="btn btn-ghost" onclick="goToThumb()">🎨 Thumbnail</button>
       <button class="btn btn-ghost" onclick="goToAnalysis()">🔍 Scene & Characters</button>
-      <button class="btn btn-ghost" id="bibleBtn" onclick="generateSeasonBible()">📖 Season Bible Banao</button>
-      <button class="btn btn-ghost" onclick="startNextSeason()">➡️ Next Season</button>
+      <button class="btn btn-ghost" id="bibleBtn" onclick="generateSeasonBible()">📖 Season Bible</button>
+      <button class="btn btn-ghost" onclick="startNextSeason()">🔄 Next Season</button>
     </div>
     <div id="bibleOutput" style="display:none;background:#0a000a;border:1px solid #440044;border-radius:8px;padding:12px;font-size:12px;color:#cc88ff;line-height:1.7;text-align:left;"></div>
   </div>
 
 </div>
 
-<!-- ══════ SCREEN 2: THUMBNAIL ══════ -->
+<!-- ══════ SCREEN 2: THUMBNAIL PROMPT ══════ -->
 <div class="screen" id="screenThumb">
   <div class="thumb-topbar">
     <button class="btn btn-icon" onclick="showScreen('screenStory')">←</button>
-    <span class="thumb-topbar-title">🎨 Thumbnail Studio</span>
-    <div style="margin-left:auto;display:flex;gap:8px;">
-      <button class="btn btn-ghost" style="padding:8px 12px;font-size:12px;" onclick="printThumb()">🖨 Print</button>
-    </div>
+    <span class="thumb-topbar-title">🎨 Thumbnail Prompt</span>
   </div>
 
   <div class="thumb-content">
 
-    <!-- Live thumbnail preview -->
-    <div>
-      <div style="font-size:10px;letter-spacing:2px;color:var(--bone-dim);text-transform:uppercase;margin-bottom:8px;">
-        Live Preview — 1280×720
-      </div>
-      <div class="tn-wrap" id="tnWrap">
-        <div id="tnCanvas">
-          <!-- BG -->
-          <div id="tnBg" class="tn-layer" style="z-index:1;background:#000;"></div>
-          <div id="tnGrad" class="tn-layer" style="z-index:2;"></div>
-          <div id="tnSmoke" class="tn-layer" style="z-index:3;overflow:hidden;"></div>
-          <!-- Moon -->
-          <div id="tnMoon" class="tn-moon" style="z-index:4;"></div>
-          <!-- Trees -->
-          <div id="tnTrees" style="position:absolute;bottom:0;left:0;right:0;height:340px;z-index:5;"></div>
-          <!-- Blood drips -->
-          <div style="position:absolute;top:0;left:0;right:0;height:8px;z-index:9;background:linear-gradient(to bottom,#600,transparent);"></div>
-          <div id="tnDrips" style="position:absolute;top:0;left:0;right:0;height:90px;display:flex;gap:16px;padding:0 50px;align-items:flex-start;z-index:9;overflow:hidden;"></div>
-          <!-- Crack SVG -->
-          <svg style="position:absolute;inset:0;width:100%;height:100%;z-index:10;opacity:0.15;" viewBox="0 0 1280 720" id="tnCracks">
-            <path d="M640 0 L648 200 L618 290 L682 400 L640 720" stroke="#f00" stroke-width="1.5" fill="none"/>
-            <path d="M648 200 L705 235 L725 200" stroke="#f00" stroke-width="1" fill="none" opacity="0.5"/>
-            <path d="M618 290 L565 330 L582 360" stroke="#f00" stroke-width="0.8" fill="none" opacity="0.4"/>
-            <path d="M0 380 L200 355 L270 390 L360 362" stroke="#f00" stroke-width="1" fill="none" opacity="0.3"/>
-            <path d="M1280 210 L1090 235 L1040 275 L1015 335" stroke="#f00" stroke-width="1" fill="none" opacity="0.3"/>
-          </svg>
-          <!-- Corner ornaments -->
-          <svg style="position:absolute;top:0;left:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC1">
-            <path d="M0 0 L75 0 L75 7 L7 7 L7 75 L0 75 Z" fill="#cc0000" opacity="0.6"/>
-            <path d="M0 0 L36 0 L36 3 L3 3 L3 36 L0 36 Z" fill="#cc0000" opacity="0.8"/>
-          </svg>
-          <svg style="position:absolute;top:0;right:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC2">
-            <path d="M110 0 L35 0 L35 7 L103 7 L103 75 L110 75 Z" fill="#cc0000" opacity="0.6"/>
-            <path d="M110 0 L74 0 L74 3 L107 3 L107 36 L110 36 Z" fill="#cc0000" opacity="0.8"/>
-          </svg>
-          <svg style="position:absolute;bottom:0;left:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC3">
-            <path d="M0 110 L75 110 L75 103 L7 103 L7 35 L0 35 Z" fill="#cc0000" opacity="0.6"/>
-          </svg>
-          <svg style="position:absolute;bottom:0;right:0;width:110px;height:110px;z-index:11;" viewBox="0 0 110 110" id="tnC4">
-            <path d="M110 110 L35 110 L35 103 L103 103 L103 35 L110 35 Z" fill="#cc0000" opacity="0.6"/>
-          </svg>
-          <!-- Figure -->
-          <div id="tnFigure" style="position:absolute;bottom:0;left:50%;transform:translateX(-50%);z-index:15;"></div>
-          <!-- Eyes -->
-          <div id="tnEyes" style="position:absolute;bottom:375px;left:50%;transform:translateX(-50%);display:flex;gap:42px;z-index:16;"></div>
-          <!-- Ground mist -->
-          <div id="tnMist" style="position:absolute;bottom:0;left:0;right:0;height:180px;z-index:17;"></div>
-          <!-- Vignette -->
-          <div class="tn-layer" style="z-index:20;background:radial-gradient(ellipse 88% 88% at 50% 50%,transparent 40%,rgba(0,0,0,0.82) 100%);"></div>
-          <!-- Text layers -->
-          <div class="tn-channel-text" id="tnChanText" style="font-size:36px;color:#ff2222;letter-spacing:7px;">KAALI RAAT</div>
-          <div class="tn-badge" id="tnBadgeText" style="background:#cc0000;color:#fff;font-size:19px;padding:6px 22px;box-shadow:0 0 20px rgba(200,0,0,0.7);">EP 01</div>
-          <div class="tn-season-text" id="tnSeasonText" style="font-size:17px;color:rgba(200,140,140,0.7);">SEASON 1</div>
-          <div class="tn-main-title" id="tnMainTitle" style="font-size:90px;padding:0 60px;">पुरानी हवेली का राज</div>
-          <div class="tn-sub-title" id="tnSubTitle" style="font-size:26px;color:rgba(220,160,160,0.85);padding:0 60px;">एक रात जो बदल गई सब कुछ...</div>
-        </div>
+    <!-- Style selector -->
+    <div class="card-block">
+      <div class="card-title">🎨 Thumbnail Style</div>
+      <div class="preset-chips" id="thumbStyleChips">
+        <div class="chip active" data-s="cinematic">🎬 Cinematic</div>
+        <div class="chip" data-s="anime">⛩ Horror Anime</div>
+        <div class="chip" data-s="realistic">📷 Realistic</div>
+        <div class="chip" data-s="cartoon">🎭 2D Cartoon</div>
+        <div class="chip" data-s="painting">🖼 Dark Painting</div>
       </div>
     </div>
 
-    <!-- Thumb controls -->
-    <div class="thumb-fields">
-      <div style="font-size:10px;letter-spacing:2px;color:var(--blood);text-transform:uppercase;">🎨 Customize</div>
-
-      <div class="field">
-        <label>Story Title</label>
-        <input type="text" id="tnInTitle" oninput="updateThumb()" maxlength="35">
+    <!-- Aspect ratio -->
+    <div class="card-block">
+      <div class="card-title">📐 Platform</div>
+      <div class="preset-chips" id="thumbPlatChips">
+        <div class="chip active" data-p="YouTube thumbnail 16:9, 1280x720">▶ YouTube</div>
+        <div class="chip" data-p="Instagram post 1:1 square">📷 Instagram</div>
+        <div class="chip" data-p="Instagram Reels / YouTube Shorts vertical 9:16">📱 Shorts/Reels</div>
       </div>
-      <div class="field">
-        <label>Tagline</label>
-        <input type="text" id="tnInSub" oninput="updateThumb()" maxlength="55">
-      </div>
-      <div class="field">
-        <label>Theme Color</label>
-        <div class="color-swatches">
-          <div class="cswatch active" style="background:#cc0000" data-c="#cc0000" onclick="setThumbColor(this)"></div>
-          <div class="cswatch" style="background:#8800cc" data-c="#8800cc" onclick="setThumbColor(this)"></div>
-          <div class="cswatch" style="background:#005599" data-c="#005599" onclick="setThumbColor(this)"></div>
-          <div class="cswatch" style="background:#006633" data-c="#006633" onclick="setThumbColor(this)"></div>
-          <div class="cswatch" style="background:#cc6600" data-c="#cc6600" onclick="setThumbColor(this)"></div>
-          <div class="cswatch" style="background:#880033" data-c="#880033" onclick="setThumbColor(this)"></div>
-        </div>
-      </div>
-      <div class="field">
-        <label>Background</label>
-        <select id="tnInBg" onchange="updateThumb()">
-          <option value="graveyard">🪦 Graveyard Night</option>
-          <option value="haunted">🏚 Haunted Mansion</option>
-          <option value="forest">🌲 Dark Forest</option>
-          <option value="void">🌑 Pure Void</option>
-        </select>
-      </div>
-
-      <button class="btn btn-primary" onclick="autoGenerateTagline()" id="aiTaglineBtn">
-        🤖 AI se Tagline Generate Karo
-      </button>
     </div>
 
-    <!-- Export -->
-    <div class="thumb-fields">
-      <div style="font-size:10px;letter-spacing:2px;color:var(--blood);text-transform:uppercase;">💾 Save</div>
-      <div style="font-size:12px;color:var(--bone-dim);line-height:1.6;">
-        <strong style="color:var(--bone);">Mobile par save karne ke liye:</strong><br>
-        1. Screenshot lo is preview ka<br>
-        2. Ya Print → PDF save karo<br>
-        3. 1280×720 crop karo kisi bhi editor mein
-      </div>
-      <button class="btn btn-ghost" onclick="printThumb()">🖨 Print / PDF Save</button>
-    </div>
+    <!-- Generate button -->
+    <button class="btn btn-primary" id="genThumbBtn" onclick="generateThumbPrompt()" style="width:100%;padding:14px;">
+      ✨ AI se Prompt Generate Karo
+    </button>
+
+    <!-- Output -->
+    <div id="thumbPromptOut"></div>
 
   </div>
 </div>
@@ -1388,7 +1329,6 @@ function showScreen(id) {
     s.classList.toggle('active', s.id === id);
   });
   if (id === 'screenSetup') renderSetupEpList();
-  if (id === 'screenThumb') { initThumb(); scaleThumb(); }
   if (id === 'screenStory') scrollToBottom();
 }
 function goToSetup() {
@@ -1398,11 +1338,9 @@ function goToSetup() {
 }
 function goToThumb() { showScreen('screenThumb'); }
 function restoreSetupForm() {
-  document.getElementById('cfgChannel').value = state.channel;
-  document.getElementById('cfgSeason').value = state.season;
-  document.getElementById('cfgEp').value = state.epNum;
-  document.getElementById('cfgTitle').value = state.title;
-  document.getElementById('cfgPrompt').value = state.prompt;
+  document.getElementById('cfgChannel').value = state.channel || 'KAALI RAAT';
+  document.getElementById('cfgTitle').value = '';
+  document.getElementById('cfgPrompt').value = '';
   renderLinkSeasonBlock();
 }
 
@@ -1417,29 +1355,73 @@ document.querySelectorAll('#presetChips .chip').forEach(c => {
 
 // ══ START ══
 async function startStudio() {
+  const title = document.getElementById('cfgTitle').value.trim();
+  if (!title) { toast('⚠️ Story title daalo!'); return; }
+
   state.channel = document.getElementById('cfgChannel').value.trim() || 'KAALI RAAT';
-  state.season = document.getElementById('cfgSeason').value.trim() || 'SEASON 1';
-  state.epNum = document.getElementById('cfgEp').value.trim() || 'EP 01';
-  state.title = document.getElementById('cfgTitle').value.trim() || 'Horror Story';
+  state.title = title;
   state.prompt = document.getElementById('cfgPrompt').value.trim();
+
+  // Always start fresh at Season 1, EP 01 unless linked season
+  if (!state.linkedSeasonId) {
+    state.season = 'SEASON 1';
+    state.epNum = 'EP 01';
+    state.seasonBible = null;
+  }
+  // epNum stays from linkedSeason flow (already set to EP 01 of new season)
+
   state.storyChunks = [];
   state.storyEnded = false;
   state.currentEpId = Date.now().toString();
   state.savedScenes = null;
   state.savedChars = null;
-  // Keep seasonBible and linkedSeasonId if coming from Next Season flow
-  if (!state.linkedSeasonId) {
-    state.seasonBible = null;
-  }
   save();
 
-  document.getElementById('topbarEp').textContent = state.epNum + ' · ' + state.title;
+  _updateTopbar();
   document.getElementById('endBanner').classList.remove('show');
   document.getElementById('storyArea').innerHTML = '';
   updateWordCount();
   showScreen('screenStory');
+  await sendContinue(true);
+}
 
-  // Auto-generate first chunk
+function _updateTopbar() {
+  document.getElementById('topbarEp').textContent = `${state.season} · ${state.epNum} · ${state.title}`;
+}
+
+// Next Episode — same season, increment EP number
+async function startNextEpisode() {
+  // Parse current ep number and increment
+  const epMatch = state.epNum.match(/(\d+)/);
+  const nextEpNum = epMatch ? parseInt(epMatch[1]) + 1 : 2;
+  const nextEpStr = 'EP ' + String(nextEpNum).padStart(2, '0');
+
+  // Save previous episode context for continuity
+  const prevStory = state.storyChunks.map(c => c.text).join('\n\n');
+  const prevContext = `[${state.season} ${state.epNum} — "${state.title}" summary]:\n${prevStory.slice(0, 800)}...`;
+
+  // Keep season bible + append ep context
+  state.seasonBible = (state.seasonBible || '') + '\n\n' + prevContext;
+  state.epNum = nextEpStr;
+  state.storyChunks = [];
+  state.storyEnded = false;
+  state.currentEpId = Date.now().toString();
+  state.savedScenes = null;
+  state.savedChars = null;
+  save();
+
+  _updateTopbar();
+  document.getElementById('endBanner').classList.remove('show');
+  document.getElementById('storyArea').innerHTML = '';
+  updateWordCount();
+
+  // Show ep divider
+  const divider = document.createElement('div');
+  divider.style.cssText = 'text-align:center;padding:12px;font-size:11px;letter-spacing:3px;color:var(--blood);text-transform:uppercase;';
+  divider.textContent = `━━━ ${state.season} · ${nextEpStr} ━━━`;
+  document.getElementById('storyArea').appendChild(divider);
+
+  toast(`▶ ${nextEpStr} shuru ho raha hai...`);
   await sendContinue(true);
 }
 
@@ -1698,6 +1680,7 @@ async function endStoryNow() {
   isGenerating = false;
   setBtnsLoading(false);
   document.getElementById('endBanner').classList.add('show');
+  document.getElementById('endBannerSub').textContent = `${state.season} · ${state.epNum} complete!`;
   save();
   saveCurrentEpisode(true);
   scrollToBottom();
@@ -1963,34 +1946,27 @@ async function generateSeasonBible() {
 }
 
 function startNextSeason() {
-  // Save current season ID for linking
-  const prevSeasonId = state.currentEpId;
-  const prevSeason = state.season;
   const prevBible = state.seasonBible;
+  if (!prevBible) { toast('⚠️ Pehle Season Bible banao!'); return; }
 
-  if (!prevBible) {
-    toast('⚠️ Pehle Season Bible banao!');
-    return;
-  }
+  const seasonMatch = state.season.match(/(\d+)/);
+  const nextNum = seasonMatch ? parseInt(seasonMatch[1]) + 1 : 2;
 
-  // Reset for new season
+  state.season = `SEASON ${nextNum}`;
+  state.epNum = 'EP 01';
   state.storyChunks = [];
   state.storyEnded = false;
   state.currentEpId = null;
-  state.linkedSeasonId = prevSeasonId;
-  // seasonBible stays — it will be used in sendContinue
-
-  // Auto-increment season number
-  const seasonMatch = prevSeason.match(/(\d+)/);
-  const nextNum = seasonMatch ? parseInt(seasonMatch[1]) + 1 : 2;
-  state.season = `SEASON ${nextNum}`;
-  state.epNum = 'EP 01';
+  state.savedScenes = null;
+  state.savedChars = null;
+  state.linkedSeasonId = state.currentEpId;
+  // seasonBible stays for continuity
 
   save();
   showScreen('screenSetup');
   restoreSetupForm();
   renderLinkSeasonBlock();
-  toast(`🎬 Season ${nextNum} ready! Bible linked hai.`);
+  toast(`🎬 Season ${nextNum} ready! Bible linked.`);
 }
 
 function renderLinkSeasonBlock() {
@@ -2060,26 +2036,42 @@ function saveCurrentEpisode(silent = false) {
 }
 
 function renderSetupEpList() {
-  const eps = getEpisodes().reverse();
+  const eps = getEpisodes().slice().reverse();
   const list = document.getElementById('setupEpList');
   const badge = document.getElementById('epCountBadge');
-  badge.textContent = eps.length ? eps.length + ' episodes' : '';
+  badge.textContent = eps.length ? eps.length + ' stories' : '';
 
   if (!eps.length) {
-    list.innerHTML = '<div class="ep-empty">Koi episode save nahi hua abhi</div>';
+    list.innerHTML = '<div class="ep-empty">Koi story save nahi hua abhi</div>';
     return;
   }
 
-  list.innerHTML = eps.map(ep => `
-    <div class="ep-row ${ep.id === state.currentEpId ? 'current' : ''}" onclick="loadEpisode('${ep.id}')">
-      <div class="ep-row-info">
-        <div class="ep-row-num">${ep.epNum} · ${ep.season} ${ep.ended ? '✅' : '🔄'}</div>
-        <div class="ep-row-title">${ep.title}</div>
-        <div class="ep-row-words">${ep.wordCount} words · ${ep.chunks} parts</div>
+  // Group by title
+  const groups = {};
+  eps.forEach(ep => {
+    const key = ep.title || 'Untitled';
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(ep);
+  });
+
+  list.innerHTML = Object.entries(groups).map(([title, epList]) => {
+    const seasons = [...new Set(epList.map(e => e.season))].join(', ');
+    const totalEps = epList.length;
+    const latest = epList[0];
+    const allDone = epList.every(e => e.ended);
+    return `
+      <div class="story-card" onclick="loadEpisode('${latest.id}')">
+        <div class="story-card-title">${title}</div>
+        <div class="story-card-meta">
+          <span class="scene-tag">${seasons}</span>
+          <span class="scene-tag">${totalEps} episode${totalEps > 1 ? 's' : ''}</span>
+          <span class="scene-tag">${allDone ? '✅ Complete' : '🔄 Ongoing'}</span>
+        </div>
+        <div class="story-card-words">${latest.wordCount} words · Last: ${latest.epNum}</div>
+        <button class="ep-row-del" onclick="deleteStory(event,'${title}')">🗑</button>
       </div>
-      <button class="ep-row-del" onclick="deleteEpisode(event,'${ep.id}')">✕</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function loadEpisode(id) {
@@ -2103,13 +2095,6 @@ function loadEpisode(id) {
   state.savedChars = ep.savedChars || null;
   save();
 
-  // Restore form
-  document.getElementById('cfgEp').value = ep.epNum;
-  document.getElementById('cfgTitle').value = ep.title;
-  document.getElementById('cfgChannel').value = ep.channel;
-  document.getElementById('cfgSeason').value = ep.season;
-  document.getElementById('cfgPrompt').value = ep.prompt || '';
-
   // Rebuild story area
   document.getElementById('storyArea').innerHTML = '';
   state.storyChunks.forEach((chunk, i) => {
@@ -2121,13 +2106,26 @@ function loadEpisode(id) {
 
   if (state.storyEnded) {
     document.getElementById('endBanner').classList.add('show');
+    document.getElementById('endBannerSub').textContent = `${state.season} · ${state.epNum} complete!`;
     setBtnsLoading(false);
     document.getElementById('continueBtn').disabled = true;
-    document.getElementById('continueBtn').innerHTML = '✅ Story Khatam';
+    document.getElementById('continueBtn').innerHTML = '✅ Episode Khatam';
+  } else {
+    document.getElementById('endBanner').classList.remove('show');
+    document.getElementById('continueBtn').disabled = false;
+    document.getElementById('continueBtn').innerHTML = '<span>📖 Continue Karo</span>';
   }
 
-  document.getElementById('topbarEp').textContent = ep.epNum + ' · ' + ep.title;
+  _updateTopbar();
   showScreen('screenStory');
+}
+
+function deleteStory(e, title) {
+  e.stopPropagation();
+  let eps = getEpisodes().filter(ep => ep.title !== title);
+  saveEpisodes(eps);
+  renderSetupEpList();
+  toast('🗑 Story deleted');
 }
 
 function deleteEpisode(e, id) {
@@ -2139,226 +2137,91 @@ function deleteEpisode(e, id) {
   toast('🗑 Episode deleted');
 }
 
-// ══ THUMBNAIL ══
-let thumbColor = '#cc0000';
+// ══ THUMBNAIL PROMPT ══
+let thumbStyle = 'cinematic';
+let thumbPlat = 'YouTube thumbnail 16:9, 1280x720';
 
-function initThumb() {
-  document.getElementById('tnInTitle').value = state.title;
-  document.getElementById('tnInSub').value = '';
-  document.getElementById('tnChanText').textContent = state.channel;
-  document.getElementById('tnBadgeText').textContent = state.epNum;
-  document.getElementById('tnSeasonText').textContent = state.season;
-  document.getElementById('tnMainTitle').textContent = state.title;
-  updateThumb();
-}
-
-function updateThumb() {
-  const title = document.getElementById('tnInTitle').value || state.title;
-  const sub = document.getElementById('tnInSub').value || '';
-  const bg = document.getElementById('tnInBg').value;
-
-  document.getElementById('tnMainTitle').textContent = title;
-  document.getElementById('tnMainTitle').style.fontSize =
-    title.length > 22 ? '64px' : title.length > 16 ? '78px' : '90px';
-  document.getElementById('tnSubTitle').textContent = sub;
-
-  applyThumbBg(bg, thumbColor);
-}
-
-function setThumbColor(el) {
-  document.querySelectorAll('.cswatch').forEach(s => s.classList.remove('active'));
-  el.classList.add('active');
-  thumbColor = el.dataset.c;
-  updateThumb();
-}
-
-function applyThumbBg(style, c) {
-  const dark = shadeColor(c, -50);
-  const bright = shadeColor(c, 50);
-
-  // Gradient
-  document.getElementById('tnGrad').style.background =
-    `radial-gradient(ellipse 70% 60% at 50% 30%, ${hexA(c,0.2)} 0%, #000 70%)`;
-
-  // Moon
-  const moon = document.getElementById('tnMoon');
-  const moonCfg = {
-    graveyard: { top:55, left:880, size:100 },
-    haunted:   { top:75, left:160, size:80 },
-    forest:    { top:45, left:620, size:90 },
-    void:      { top:-200, left:-200, size:0 },
-  }[style] || {};
-  moon.style.cssText = `
-    position:absolute;
-    width:${moonCfg.size}px;height:${moonCfg.size}px;
-    top:${moonCfg.top}px;left:${moonCfg.left}px;
-    border-radius:50%;
-    background:radial-gradient(circle,#fff8ee 0%,#ffd0a0 40%,${hexA(c,0.35)} 70%,transparent 100%);
-    animation:moonPulse 4s ease-in-out infinite alternate;
-    z-index:4;
-  `;
-
-  // Trees
-  const treesEl = document.getElementById('tnTrees');
-  if (style === 'void') {
-    treesEl.innerHTML = '';
-  } else {
-    const tc = style === 'forest' ? '#001500' : '#060000';
-    treesEl.innerHTML = `
-      <svg width="1280" height="340" viewBox="0 0 1280 340" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-        ${mkTrees(0,560,9,tc)}${mkTrees(720,1280,9,tc)}
-        <rect x="0" y="305" width="1280" height="35" fill="${tc}"/>
-      </svg>`;
-  }
-
-  // Smoke
-  const smokeEl = document.getElementById('tnSmoke');
-  smokeEl.innerHTML = '';
-  [0,1,2,3,4].forEach(i => {
-    const d = document.createElement('div');
-    d.className = 'tn-smoke-layer';
-    d.style.cssText = `width:${320+i*90}px;height:${200+i*60}px;background:radial-gradient(circle,${hexA(c,0.055+i*0.01)} 0%,transparent 70%);left:${-60+i*220}px;bottom:${-20+i*35}px;animation-duration:${9+i*3}s;animation-delay:${-i*2}s;`;
-    smokeEl.appendChild(d);
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('#thumbStyleChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#thumbStyleChips .chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      thumbStyle = c.dataset.s;
+    });
   });
-
-  // Eyes
-  const eyesEl = document.getElementById('tnEyes');
-  eyesEl.innerHTML = `
-    <div class="tn-eye" style="width:14px;height:14px;background:${bright};box-shadow:0 0 10px 5px ${hexA(bright,0.9)},0 0 30px 15px ${hexA(c,0.5)};"></div>
-    <div class="tn-eye" style="width:14px;height:14px;background:${bright};box-shadow:0 0 10px 5px ${hexA(bright,0.9)},0 0 30px 15px ${hexA(c,0.5)};animation-delay:0.6s;"></div>
-  `;
-
-  // Mist
-  document.getElementById('tnMist').style.background =
-    `linear-gradient(to top,${hexA(c,0.38)} 0%,${hexA(c,0.1)} 55%,transparent 100%)`;
-
-  // Badge + channel color
-  document.getElementById('tnBadgeText').style.background = c;
-  document.getElementById('tnBadgeText').style.boxShadow = `0 0 20px ${hexA(c,0.8)}`;
-  document.getElementById('tnChanText').style.color = bright;
-  document.getElementById('tnChanText').style.textShadow = `0 0 15px ${c}, 0 0 40px ${hexA(c,0.5)}, 2px 2px 0 #000`;
-  document.getElementById('tnSeasonText').style.color = hexA(c, 0.7);
-  document.getElementById('tnMainTitle').style.textShadow =
-    `0 0 30px ${hexA(c,0.9)}, 0 0 60px ${hexA(c,0.5)}, 3px 3px 0 ${dark}, -2px -2px 0 #000, 5px 5px 16px #000`;
-
-  // Cracks
-  document.querySelectorAll('#tnCracks path').forEach(p => p.setAttribute('stroke', c));
-  // Corners
-  ['tnC1','tnC2','tnC3','tnC4'].forEach(id => {
-    document.querySelectorAll(`#${id} path`).forEach(p => p.setAttribute('fill', c));
+  document.querySelectorAll('#thumbPlatChips .chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('#thumbPlatChips .chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+      thumbPlat = c.dataset.p;
+    });
   });
+});
 
-  // Figure
-  buildThumbFigure(c, dark);
+const styleDesc = {
+  cinematic: 'cinematic horror film style, dramatic lighting, high contrast, movie poster quality, photorealistic',
+  anime: 'horror anime style, detailed cel-shaded illustration, dark fantasy, expressive characters, Japanese horror aesthetic',
+  realistic: 'ultra realistic, hyper detailed, 8K, professional photography, horror atmosphere, dramatic shadows',
+  cartoon: '2D cartoon animation style, bold outlines, cel-shaded, vibrant colors with dark horror theme, stylized characters',
+  painting: 'dark oil painting style, gothic art, textured brushwork, chiaroscuro lighting, masterpiece quality',
+};
 
-  // Drips
-  const dripsEl = document.getElementById('tnDrips');
-  dripsEl.innerHTML = '';
-  [30,14,50,10,38,58,22,44,12,55,28,18,42,24,36,48,8,32,52,20,16,46].forEach(h => {
-    const d = document.createElement('div');
-    d.className = 'tn-drip';
-    d.style.cssText = `--dh:${h}px;height:${h}px;width:${4+Math.random()*5}px;background:linear-gradient(to bottom,${dark} 0%,${c} 60%,${hexA(c,0)} 100%);animation-duration:${2+Math.random()*3}s;animation-delay:${-Math.random()*3}s;flex-shrink:0;`;
-    dripsEl.appendChild(d);
-  });
+async function generateThumbPrompt() {
+  const btn = document.getElementById('genThumbBtn');
+  const out = document.getElementById('thumbPromptOut');
+  if (!state.storyChunks.length) { toast('⚠️ Pehle story likho!'); return; }
 
-  scaleThumb();
-}
-
-function mkTrees(x0, x1, n, col) {
-  let s = '';
-  const w = x1 - x0;
-  for (let i = 0; i < n; i++) {
-    const x = x0 + (w * i / n) + Math.random() * (w / n * 0.5);
-    const h = 180 + Math.random() * 140;
-    const tw = 20 + Math.random() * 28;
-    s += `<rect x="${x}" y="${340 - h}" width="${tw * 0.3}" height="${h}" fill="${col}"/>`;
-    s += `<path d="M${x-tw} ${340-h*0.5} L${x+tw*0.15} ${340-h*0.92} L${x+tw} ${340-h*0.55} Z" fill="${col}"/>`;
-    s += `<path d="M${x-tw*0.7} ${340-h*0.33} L${x+tw*0.15} ${340-h*0.68} L${x+tw*0.8} ${340-h*0.38} Z" fill="${col}"/>`;
-  }
-  return s;
-}
-
-function buildThumbFigure(c, dark) {
-  document.getElementById('tnFigure').innerHTML = `
-    <svg width="400" height="600" viewBox="0 0 400 600" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <radialGradient id="tg" cx="50%" cy="20%" r="60%">
-          <stop offset="0%" stop-color="${hexA(c,0.65)}"/>
-          <stop offset="100%" stop-color="#000"/>
-        </radialGradient>
-        <filter id="tb"><feGaussianBlur stdDeviation="3"/></filter>
-      </defs>
-      <ellipse cx="200" cy="290" rx="145" ry="270" fill="${hexA(c,0.1)}" filter="url(#tb)"/>
-      <path d="M200 55 C225 55 248 72 252 96 C262 114 256 138 253 156 C278 168 292 186 286 220 C280 250 264 262 252 280 C270 292 290 310 294 350 C306 405 300 460 288 508 C276 552 258 582 246 598 L200 600 L154 598 C142 582 124 552 112 508 C100 460 94 405 106 350 C110 310 130 292 148 280 C136 262 120 250 114 220 C108 186 122 168 147 156 C144 138 138 114 148 96 C152 72 175 55 200 55Z" fill="url(#tg)"/>
-      <ellipse cx="200" cy="38" rx="42" ry="50" fill="#0a0000"/>
-      <path d="M158 24 C162 -4 238 -4 242 24 C250 52 232 72 200 74 C168 72 150 52 158 24Z" fill="#060000" opacity="0.97"/>
-      <path d="M108 210 C90 205 72 198 60 190 C48 182 42 173 45 164 C47 157 55 154 65 158 C58 152 58 143 65 141 C72 139 80 144 83 151 C80 144 83 135 90 134 C97 133 103 139 104 147 C101 140 106 132 113 132 C120 132 123 139 122 147 C130 139 138 140 141 146 C147 154 142 166 134 172 C124 180 115 192 108 210Z" fill="${hexA(c,0.5)}"/>
-    </svg>`;
-  document.getElementById('tnFigure').style.filter =
-    `drop-shadow(0 0 28px ${hexA(c,0.65)}) drop-shadow(0 0 65px ${hexA(c,0.3)})`;
-}
-
-function scaleThumb() {
-  const wrap = document.getElementById('tnWrap');
-  const canvas = document.getElementById('tnCanvas');
-  const w = wrap.clientWidth;
-  const scale = w / 1280;
-  canvas.style.transform = `scale(${scale})`;
-  canvas.style.transformOrigin = 'top left';
-  wrap.style.height = (720 * scale) + 'px';
-}
-
-// AI Tagline
-async function autoGenerateTagline() {
-  const btn = document.getElementById('aiTaglineBtn');
   btn.disabled = true;
-  btn.innerHTML = '<div class="spinner"></div> Generate ho raha hai...';
+  btn.innerHTML = '<div class="spinner"></div> Prompt ban raha hai...';
+  out.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>AI story padh raha hai...</div>';
+
+  const storyText = state.storyChunks.map(c => c.text).join('\n\n');
+  const style = styleDesc[thumbStyle] || styleDesc.cinematic;
 
   try {
     const res = await fetch('/api/ai', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
         messages: [{
           role: 'user',
-          content: `Horror YouTube thumbnail ke liye ek short, scary Hindi tagline do story "${state.title}" ke liye. Sirf ek line, 5-8 words, dramatic aur creepy honi chahiye. Sirf tagline likho, kuch aur nahi.`
+          content: `Yeh Hindi horror story hai:\nTitle: ${state.title}\nEpisode: ${state.epNum} | ${state.season}\n\nStory:\n${storyText}\n\nIs story ke liye ek YouTube thumbnail image generation prompt banao.\n\nRequirements:\n- Style: ${style}\n- Platform: ${thumbPlat}\n- Story ka sabse scary / dramatic moment capture karo\n- Main character ya scary element prominently dikhao\n- Dark, moody atmosphere\n- Include text overlay suggestion: title aur tagline kahan hoga\n- Colors jo horror feel dein\n- Specific composition details (foreground, background, lighting direction)\n\nSirf English mein prompt do. No extra explanation. Just the prompt, ready to paste in Midjourney/DALL-E/Stable Diffusion.`
         }],
-        max_tokens: 60,
-        temperature: 0.9,
+        max_tokens: 400,
+        temperature: 0.7,
       })
     });
     const data = await res.json();
-    const tagline = data.choices?.[0]?.message?.content?.trim().replace(/^["']|["']$/g,'') || '';
-    if (tagline) {
-      document.getElementById('tnInSub').value = tagline;
-      document.getElementById('tnSubTitle').textContent = tagline;
-      toast('✅ Tagline ready!');
+    const prompt = data.choices?.[0]?.message?.content?.trim() || '';
+
+    if (!prompt) {
+      out.innerHTML = '<div class="analysis-empty">Prompt generate nahi hua. Dobara try karo.</div>';
+    } else {
+      out.innerHTML = `
+        <div class="img-prompt-box" style="background:#050010;border-color:#330066;">
+          <div class="img-prompt-label" style="color:#aa66ff;">🖼 ${state.epNum} · ${state.title}</div>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:4px;">
+            <span class="scene-tag">${thumbStyle}</span>
+            <span class="scene-tag">${thumbPlat.split(',')[0]}</span>
+          </div>
+          <div class="img-prompt-text">${prompt}</div>
+          <button class="img-copy-btn" onclick="copyPrompt(this, \`${prompt.replace(/`/g,"'")}\`)">📋 Copy Prompt</button>
+        </div>
+        <div style="font-size:11px;color:#444;padding:8px 4px;line-height:1.7;">
+          💡 Midjourney: <span style="color:#666;">/imagine [prompt] --ar 16:9 --v 6</span><br>
+          💡 DALL-E 3: <span style="color:#666;">Prompt seedha paste karo</span><br>
+          💡 Stable Diffusion: <span style="color:#666;">Prompt + negative prompt add karo</span>
+        </div>
+        <button class="btn btn-ghost" onclick="generateThumbPrompt()" style="font-size:12px;">🔄 Alag Style Try Karo</button>
+      `;
     }
   } catch (err) {
-    toast('❌ ' + err.message);
+    out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
   }
 
   btn.disabled = false;
-  btn.innerHTML = '🤖 AI se Tagline Generate Karo';
-}
-
-function printThumb() { window.print(); }
-
-// ══ COLOR UTILS ══
-function hexA(hex, a) {
-  const r = parseInt(hex.slice(1,3),16);
-  const g = parseInt(hex.slice(3,5),16);
-  const b = parseInt(hex.slice(5,7),16);
-  return `rgba(${r},${g},${b},${a})`;
-}
-function shadeColor(hex, amt) {
-  let r = Math.min(255,Math.max(0,parseInt(hex.slice(1,3),16)+amt));
-  let g = Math.min(255,Math.max(0,parseInt(hex.slice(3,5),16)+amt));
-  let b = Math.min(255,Math.max(0,parseInt(hex.slice(5,7),16)+amt));
-  return '#'+r.toString(16).padStart(2,'0')+g.toString(16).padStart(2,'0')+b.toString(16).padStart(2,'0');
+  btn.innerHTML = '✨ AI se Prompt Generate Karo';
 }
 
 // ══ TOAST ══
@@ -2376,7 +2239,6 @@ window.addEventListener('load', () => {
   load();
   restoreSetupForm();
   renderSetupEpList();
-  window.addEventListener('resize', scaleThumb);
 });
 </script>
 </body>
