@@ -1359,8 +1359,10 @@ let state = {
   thumbColor: '#cc0000',
   thumbBg: 'graveyard',
   currentEpId: null,
-  seasonBible: null,       // Generated after season ends
-  linkedSeasonId: null,    // Previous season episode ID for continuity
+  seasonBible: null,
+  linkedSeasonId: null,
+  savedScenes: null,   // persisted scene breakdown
+  savedChars: null,    // persisted character list
 };
 
 // ══ PERSIST ══
@@ -1423,6 +1425,8 @@ async function startStudio() {
   state.storyChunks = [];
   state.storyEnded = false;
   state.currentEpId = Date.now().toString();
+  state.savedScenes = null;
+  state.savedChars = null;
   // Keep seasonBible and linkedSeasonId if coming from Next Season flow
   if (!state.linkedSeasonId) {
     state.seasonBible = null;
@@ -1703,6 +1707,9 @@ async function endStoryNow() {
 function goToAnalysis() {
   if (!state.storyChunks.length) { toast('⚠️ Pehle kuch story likho!'); return; }
   showScreen('screenAnalysis');
+  // Auto-load saved data if exists
+  if (state.savedScenes) renderScenes(state.savedScenes);
+  if (state.savedChars) renderChars(state.savedChars);
 }
 
 function switchTab(tab) {
@@ -1744,23 +1751,10 @@ async function generateScenes() {
     if (!scenes.length) {
       out.innerHTML = '<div class="analysis-empty">Scenes parse nahi ho paye. Dobara try karo.</div>';
     } else {
-      out.innerHTML = scenes.map(s => `
-        <div class="scene-card">
-          <div class="scene-num">🎬 Scene ${s.num}</div>
-          <div class="scene-title">${s.title}</div>
-          <div class="scene-meta">
-            <span class="scene-tag">📍 ${s.location}</span>
-            <span class="scene-tag">🎭 ${s.mood}</span>
-          </div>
-          <div class="scene-desc">${s.what}</div>
-          ${s.imgprompt ? `
-          <div class="img-prompt-box">
-            <div class="img-prompt-label">🎨 Image Generation Prompt</div>
-            <div class="img-prompt-text">${s.imgprompt}</div>
-            <button class="img-copy-btn" onclick="copyPrompt(this, \`${s.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
-          </div>` : ''}
-        </div>
-      `).join('');
+      state.savedScenes = scenes;
+      save();
+      saveCurrentEpisode(true);
+      renderScenes(scenes);
     }
   } catch (err) {
     out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
@@ -1768,6 +1762,28 @@ async function generateScenes() {
 
   btn.disabled = false;
   btn.innerHTML = '🔄 Dobara Generate Karo';
+}
+
+function renderScenes(scenes) {
+  const out = document.getElementById('scenesOutput');
+  if (!out) return;
+  out.innerHTML = scenes.map(s => `
+    <div class="scene-card">
+      <div class="scene-num">🎬 Scene ${s.num}</div>
+      <div class="scene-title">${s.title}</div>
+      <div class="scene-meta">
+        <span class="scene-tag">📍 ${s.location}</span>
+        <span class="scene-tag">🎭 ${s.mood}</span>
+      </div>
+      <div class="scene-desc">${s.what}</div>
+      ${s.imgprompt ? `
+      <div class="img-prompt-box">
+        <div class="img-prompt-label">🎨 Image Generation Prompt</div>
+        <div class="img-prompt-text">${s.imgprompt}</div>
+        <button class="img-copy-btn" onclick="copyPrompt(this, \`${s.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
+      </div>` : ''}
+    </div>
+  `).join('');
 }
 
 function parseScenes(raw) {
@@ -1823,38 +1839,13 @@ async function generateCharacters() {
     const raw = data.choices?.[0]?.message?.content || '';
     const chars = parseCharacters(raw);
 
-    const roleEmoji = { 'Protagonist': '🦸', 'Antagonist': '👿', 'Supporting': '👤', 'Supernatural': '👻' };
-
     if (!chars.length) {
       out.innerHTML = '<div class="analysis-empty">Characters parse nahi ho paye. Dobara try karo.</div>';
     } else {
-      // Build combined "all characters in one frame" prompt
-      const allDesc = chars.map(c => `${c.name} (${c.role}): ${c.imgprompt || c.description}`).join(' | ');
-      const combinedPrompt = `Group illustration of all characters together in one frame, 2D horror animation style, cel-shaded, dark atmospheric background. Characters: ${allDesc}. Each character labeled with their name below. Horror anime art style, detailed character design.`;
-
-      out.innerHTML = `
-        <div class="img-prompt-box" style="border-color:#8800cc33;background:#0d0015;">
-          <div class="img-prompt-label" style="color:#cc88ff;">🎭 All Characters — Group Frame Prompt</div>
-          <div class="img-prompt-text">${combinedPrompt}</div>
-          <button class="img-copy-btn" onclick="copyPrompt(this, \`${combinedPrompt.replace(/`/g,"'")}\`)">📋 Copy All</button>
-        </div>
-        ${chars.map(c => `
-        <div class="char-card">
-          <div class="char-name">
-            ${roleEmoji[c.role] || '👤'} ${c.name}
-            <span class="char-role-badge">${c.role}</span>
-          </div>
-          <div class="char-desc">${c.description}</div>
-          <div class="char-appear">📍 ${c.appearance}</div>
-          ${c.imgprompt ? `
-          <div class="img-prompt-box">
-            <div class="img-prompt-label">🎨 Character Image Prompt</div>
-            <div class="img-prompt-text">${c.imgprompt}</div>
-            <button class="img-copy-btn" onclick="copyPrompt(this, \`${c.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
-          </div>` : ''}
-        </div>
-        `).join('')}
-      `;
+      state.savedChars = chars;
+      save();
+      saveCurrentEpisode(true);
+      renderChars(chars);
     }
   } catch (err) {
     out.innerHTML = `<div class="analysis-empty">Error: ${err.message}</div>`;
@@ -1862,6 +1853,38 @@ async function generateCharacters() {
 
   btn.disabled = false;
   btn.innerHTML = '🔄 Dobara Generate Karo';
+}
+
+function renderChars(chars) {
+  const out = document.getElementById('charsOutput');
+  if (!out) return;
+  const roleEmoji = { 'Protagonist': '🦸', 'Antagonist': '👿', 'Supporting': '👤', 'Supernatural': '👻' };
+  const allDesc = chars.map(c => `${c.name} (${c.role}): ${c.imgprompt || c.description}`).join(' | ');
+  const combinedPrompt = `Group illustration of all characters together in one frame, 2D horror animation style, cel-shaded, dark atmospheric background. Characters: ${allDesc}. Each character labeled with their name below. Horror anime art style, detailed character design.`;
+
+  out.innerHTML = `
+    <div class="img-prompt-box" style="border-color:#8800cc33;background:#0d0015;">
+      <div class="img-prompt-label" style="color:#cc88ff;">🎭 All Characters — Group Frame Prompt</div>
+      <div class="img-prompt-text">${combinedPrompt}</div>
+      <button class="img-copy-btn" onclick="copyPrompt(this, \`${combinedPrompt.replace(/`/g,"'")}\`)">📋 Copy All</button>
+    </div>
+    ${chars.map(c => `
+    <div class="char-card">
+      <div class="char-name">
+        ${roleEmoji[c.role] || '👤'} ${c.name}
+        <span class="char-role-badge">${c.role}</span>
+      </div>
+      <div class="char-desc">${c.description}</div>
+      <div class="char-appear">📍 ${c.appearance}</div>
+      ${c.imgprompt ? `
+      <div class="img-prompt-box">
+        <div class="img-prompt-label">🎨 Character Image Prompt</div>
+        <div class="img-prompt-text">${c.imgprompt}</div>
+        <button class="img-copy-btn" onclick="copyPrompt(this, \`${c.imgprompt.replace(/`/g,"'")}\`)">📋 Copy</button>
+      </div>` : ''}
+    </div>
+    `).join('')}
+  `;
 }
 
 function parseCharacters(raw) {
@@ -2026,6 +2049,8 @@ function saveCurrentEpisode(silent = false) {
     prompt: state.prompt,
     seasonBible: state.seasonBible || null,
     linkedSeasonId: state.linkedSeasonId || null,
+    savedScenes: state.savedScenes || null,
+    savedChars: state.savedChars || null,
   };
   const idx = eps.findIndex(e => e.id === ep.id);
   if (idx !== -1) eps[idx] = ep;
@@ -2074,6 +2099,8 @@ function loadEpisode(id) {
   state.storyEnded = ep.ended || false;
   state.seasonBible = ep.seasonBible || null;
   state.linkedSeasonId = ep.linkedSeasonId || null;
+  state.savedScenes = ep.savedScenes || null;
+  state.savedChars = ep.savedChars || null;
   save();
 
   // Restore form
