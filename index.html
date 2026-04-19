@@ -2312,17 +2312,14 @@ function renderScenes(scenes) {
 function loadSceneImg(idx, prompt, seed) {
   const wrap = document.getElementById('scene-img-' + idx);
   if (!wrap) return;
-  const url = buildPollinationsUrl(prompt, seed !== undefined ? seed : idx * 100);
-  wrap.innerHTML = '<div class="scene-img-loading"><div class="spinner"></div>Image load ho rahi hai...</div>';
-  const img = new Image();
-  img.onload = function() {
-    wrap.innerHTML = '<img src="' + url + '" alt="Scene ' + (idx+1) + '" loading="lazy" style="width:100%;display:block;border-radius:8px;">'
-      + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
-  };
-  img.onerror = function() {
-    wrap.innerHTML = '<div class="scene-img-loading" style="color:#666;flex-direction:column;gap:8px;">⚠️ Image load nahi hui<br><button class="scene-img-btn" style="margin-top:4px;" onclick="regenSceneImg(' + idx + ')">Retry</button></div>';
-  };
-  img.src = url;
+  const s = (seed !== undefined && seed !== null) ? seed : (idx * 100);
+  const url = buildPollinationsUrl(prompt, s);
+  wrap.innerHTML = '<img src="' + url + '" alt="Scene ' + (idx+1) + '" '
+    + 'style="width:100%;display:block;border-radius:8px;" '
+    + 'loading="lazy" '
+    + 'onload="this.parentElement.querySelector(\'.scene-img-loading\') && this.parentElement.querySelector(\'.scene-img-loading\').remove()" '
+    + 'onerror="this.style.display=\'none\';this.parentElement.innerHTML=\'<div class=\\\'scene-img-loading\\\' style=\\\'color:#666;flex-direction:column;gap:8px;\\\'>⚠️ Image load nahi hui<br><button class=\\\'scene-img-btn\\\' style=\\\'margin-top:4px;\\\' onclick=\\\'regenSceneImg(' + idx + ')\\\'>Retry</button></div>\'">'
+    + '<a href="' + url + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
 }
 
 function reloadAllImages() {
