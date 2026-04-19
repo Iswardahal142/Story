@@ -1521,8 +1521,8 @@ html, body {
     <!-- Together AI Image API Panel -->
     <div class="analysis-panel" id="panelEl" style="display:none;">
       <div class="analysis-generate-bar" style="background:#0a0a00;border-color:#443300;">
-        <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🎨 Together AI — Image API Keys</div>
-        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — ek ka credit khatam hone par auto-switch hoga 🔄<br>~333 images per $1 credit (FLUX model)</div>
+        <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🎨 Hugging Face — Image API Keys</div>
+        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — ek ka limit hone par auto-switch hoga 🔄<br>Unlimited free images (Stable Diffusion XL)</div>
 
         <div id="togetherActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
           <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
@@ -1533,14 +1533,14 @@ html, body {
 
         <div class="el-add-form" style="border-color:#443300;">
           <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;">➕ API Key Add Karo</div>
-          <input class="el-add-input" id="togetherNewKeyInput" type="password" placeholder="Together AI API Key" style="border-color:#443300;">
+          <input class="el-add-input" id="togetherNewKeyInput" type="password" placeholder="hf_... Hugging Face Token" style="border-color:#443300;">
           <input class="el-add-input" id="togetherNewKeyName" type="text" placeholder="Label (e.g. Account 1)" style="font-family:'Noto Sans Devanagari',sans-serif;border-color:#443300;">
           <button class="btn btn-primary" onclick="addTogetherKey()" style="font-size:12px;padding:10px;background:linear-gradient(135deg,#aa6600,#664400);">➕ Add Key</button>
         </div>
 
         <div style="font-size:10px;color:#333;line-height:1.6;padding:4px;">
-          💡 api.together.xyz pe signup karo → API Keys → Create<br>
-          💡 $1 free credit milta hai signup pe (~333 images)
+          💡 huggingface.co pe signup karo → Settings → Access Tokens → New Token<br>
+          💡 Free unlimited — token format: hf_xxxxxxxxxxxx
         </div>
       </div>
     </div>
@@ -2316,32 +2316,41 @@ function loadSceneImg(idx, prompt, seed) {
   if (!wrap) return;
   const activeKey = getActiveTogetherKey();
   if (activeKey) {
-    // Together AI
-    const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded';
-    fetch('https://api.together.xyz/v1/images/generations', {
+    // Hugging Face Inference API
+    const fullPrompt = prompt + ', 2D horror animation, dark atmospheric, cel-shaded, high quality';
+    fetch('https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0', {
       method: 'POST',
       headers: { 'Authorization': 'Bearer ' + activeKey.key, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'black-forest-labs/FLUX.1-schnell-Free', prompt: fullPrompt, width: 768, height: 432, steps: 4, n: 1 })
+      body: JSON.stringify({ inputs: fullPrompt, parameters: { width: 768, height: 432, num_inference_steps: 30 } })
     })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-      if (data.error) throw new Error(data.error.message || 'API error');
-      const imgUrl = data.data && data.data[0] && data.data[0].url;
-      if (!imgUrl) throw new Error('No image URL');
+    .then(function(res) {
+      if (!res.ok) return res.text().then(function(t) { throw new Error(t); });
+      return res.blob();
+    })
+    .then(function(blob) {
+      const blobUrl = URL.createObjectURL(blob);
+      // Track usage
       const keys = getTogetherKeys();
       const k = keys.find(function(k) { return k.key === activeKey.key; });
       if (k) { k.imagesUsed = (k.imagesUsed || 0) + 1; saveTogetherKeys(keys); renderTogetherKeys(); }
       wrap.style.cssText = 'width:100%;border-radius:8px;overflow:hidden;background:#0a0000;border:1px solid var(--border);margin-top:8px;position:relative;display:block;';
-      wrap.innerHTML = '<img src="' + imgUrl + '" style="width:100%;display:block;border-radius:8px;">'
-        + '<a href="' + imgUrl + '" download="scene_' + (idx+1) + '.jpg" target="_blank" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
+      wrap.innerHTML = '<img src="' + blobUrl + '" style="width:100%;display:block;border-radius:8px;">'
+        + '<a href="' + blobUrl + '" download="scene_' + (idx+1) + '.jpg" style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.7);border:1px solid #444;color:#ccc;padding:3px 8px;border-radius:4px;font-size:10px;text-decoration:none;">⬇️</a>';
       if (btn) { btn.innerHTML = '🔄 Dobara Generate Karo'; btn.disabled = false; btn.style.borderColor = '#443300'; btn.style.color = '#ffaa00'; }
     })
     .catch(function(err) {
-      if (err.message && (err.message.includes('credit') || err.message.includes('quota') || err.message.includes('limit') || err.message.includes('balance'))) {
+      const msg = err.message || '';
+      if (msg.includes('loading') || msg.includes('estimated_time')) {
+        // Model warm up ho rahi hai — retry after 20s
+        if (btn) { btn.innerHTML = '⏳ Model load ho rahi hai... (20s)'; btn.disabled = true; }
+        setTimeout(function() { loadSceneImg(idx, prompt, seed); }, 20000);
+        return;
+      }
+      if (msg.includes('quota') || msg.includes('limit') || msg.includes('unauthorized') || msg.includes('Invalid')) {
         markTogetherKeyExhausted(activeKey.key);
-        toast('⚠️ Key ka credit khatam! Image API tab mein naya key add karo.');
+        toast('⚠️ Key invalid ya limit khatam! Image API tab mein check karo.');
       } else {
-        toast('❌ Error: ' + err.message);
+        toast('❌ Error: ' + msg.slice(0, 80));
       }
       wrap.innerHTML = '';
       if (btn) { btn.innerHTML = '⚠️ Error — Retry Karo'; btn.disabled = false; btn.style.borderColor = '#cc4444'; btn.style.color = '#cc4444'; }
