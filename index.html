@@ -2496,7 +2496,7 @@ async function generateThumbPrompt() {
   btn.innerHTML = '✨ AI se Prompt Generate Karo';
 }
 
-// ══ FULL NARRATION GENERATOR ══
+// ══ FULL NARRATION GENERATOR (ElevenLabs Ready) ══
 async function generateFullNarration() {
   if (!state.storyChunks.length) { toast('⚠️ Story nahi hai!'); return; }
 
@@ -2505,8 +2505,7 @@ async function generateFullNarration() {
   out.style.display = 'block';
   textEl.textContent = '';
 
-  // Show loading
-  textEl.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>Narration ban rahi hai...</div>';
+  textEl.innerHTML = '<div class="analysis-loading"><div class="spinner"></div>ElevenLabs narration ban rahi hai...</div>';
 
   const fullStory = state.storyChunks.map(c => c.text).join('\n\n');
 
@@ -2516,16 +2515,24 @@ async function generateFullNarration() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: 'openai/gpt-4.1-nano',
-        max_tokens: 2000,
+        max_tokens: 2500,
         temperature: 0.7,
         messages: [
           {
             role: 'system',
-            content: `Tu ek professional Hindi horror story narrator hai jo YouTube ke liye voice-over script likhta hai. Teri awaaz mein drama, suspense, aur dard hona chahiye. SIRF HINDI MEIN LIKHO.`
+            content: `Tu ek professional Hindi horror story narrator hai jo ElevenLabs text-to-speech ke liye voice-over script likhta hai.
+
+ElevenLabs ke liye yeh special tags use karna ZAROORI hai:
+- <break time="0.5s" /> — chhota pause
+- <break time="1.0s" /> — dramatic pause
+- <break time="1.5s" /> — lamba suspense pause
+- <break time="2.0s" /> — climax ke liye maximum pause
+
+SIRF HINDI DEVANAGARI mein likho. Sirf ElevenLabs break tags allowed hain.`
           },
           {
             role: 'user',
-            content: `Yeh horror story hai:\n\n${fullStory}\n\nAb is poori story ka ek smooth, connected HINDI NARRATION script likho jo YouTube voice-over ke liye ready ho.\n\nRULES:\n- SIRF HINDI DEVANAGARI mein likho — ek bhi English sentence nahi\n- Poori story ek flow mein likho bina "Part 1, Part 2" ke\n- Dramatic pauses ke liye "..." use karo\n- Voice-over style — jaise koi bata raha ho\n- Characters ke dialogues naturally include karo\n- Beginning se ending tak connected narrative\n- Koi heading mat lagao, seedha narration shuru karo`
+            content: `Yeh horror story hai:\n\n${fullStory}\n\nAb is poori story ka ElevenLabs-ready HINDI NARRATION script likho.\n\nZARRORI RULES:\n- SIRF HINDI DEVANAGARI mein likho — ek bhi English word nahi (sirf break tags allowed)\n- Poori story ek flow mein — koi "Part 1, Part 2" nahi\n- Har scary/tense moment ke baad <break time="1.0s" /> lagao\n- Dialogue se pehle aur baad mein <break time="0.5s" /> lagao\n- Climax ya twist ke baad <break time="1.5s" /> lagao\n- Story ke bilkul shuru mein <break time="0.8s" /> lagao\n- Koi heading mat lagao, seedha narration shuru karo\n\nExample:\nRaat ke do baj rahe the... <break time="1.0s" /> jab Ramesh ne woh awaaz suni. <break time="0.8s" /> "Kaun hai wahan?" <break time="0.5s" /> usne kaanpte huye pucha. <break time="1.5s" />\n\nAb poori story is style mein likho:`
           }
         ]
       })
@@ -2535,8 +2542,13 @@ async function generateFullNarration() {
     const narration = data.choices?.[0]?.message?.content?.trim() || '';
 
     if (narration) {
-      textEl.textContent = narration;
-      toast('✅ Narration ready!');
+      // Show with ElevenLabs tags highlighted in purple
+      textEl.innerHTML = narration
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/&lt;break time="([^"]+)" \/&gt;/g, '<span style="background:#1a0033;color:#cc88ff;padding:1px 6px;border-radius:3px;font-size:11px;font-family:monospace;">&lt;break time="$1" /&gt;</span>');
+      toast('✅ ElevenLabs Narration ready!');
       out.scrollIntoView({ behavior: 'smooth' });
     } else {
       textEl.textContent = 'Narration generate nahi hua. Dobara try karo.';
@@ -2547,10 +2559,19 @@ async function generateFullNarration() {
 }
 
 function copyNarration() {
-  const text = document.getElementById('narrationText').textContent;
-  if (!text) return;
+  // Get raw text with actual ElevenLabs tags (not HTML-escaped)
+  const el = document.getElementById('narrationText');
+  if (!el) return;
+  // Convert highlighted spans back to real break tags
+  let text = el.innerHTML
+    .replace(/<span[^>]*>&lt;break time="([^"]+)" \/&gt;<\/span>/g, '<break time="$1" />')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+  if (!text.trim()) return;
   navigator.clipboard.writeText(text).then(() => {
-    toast('✅ Narration copied!');
+    toast('✅ ElevenLabs Narration copied!');
   }).catch(() => toast('❌ Copy nahi hua'));
 }
 
