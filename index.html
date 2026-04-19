@@ -2584,17 +2584,9 @@ SIRF HINDI DEVANAGARI mein likho. Sirf ElevenLabs break tags allowed hain.`
 }
 
 function copyNarration() {
-  // Get raw text with actual ElevenLabs tags (not HTML-escaped)
-  const el = document.getElementById('narrationText');
-  if (!el) return;
-  // Convert highlighted spans back to real break tags
-  let text = el.innerHTML
-    .replace(/<span[^>]*>&lt;break time="([^"]+)" \/&gt;<\/span>/g, '<break time="$1" />')
-    .replace(/<[^>]+>/g, '')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>');
-  if (!text.trim()) return;
+  // Seedha savedNarration se copy karo — ElevenLabs tags intact rahenge
+  const text = state.savedNarration || '';
+  if (!text.trim()) { toast('❌ Pehle narration generate karo!'); return; }
   navigator.clipboard.writeText(text).then(() => {
     toast('✅ ElevenLabs Narration copied!');
   }).catch(() => toast('❌ Copy nahi hua'));
