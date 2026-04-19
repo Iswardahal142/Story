@@ -6,29 +6,18 @@ export default async function handler(req, res) {
   const { prompt } = req.body;
   if (!prompt) return res.status(400).json({ error: 'Prompt required' });
 
-  const HF_TOKEN = process.env.HF_TOKEN;
-  if (!HF_TOKEN) return res.status(500).json({ error: 'HF_TOKEN env variable set nahi hai' });
-
   try {
-    const response = await fetch(
-      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-schnell',
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${HF_TOKEN}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ inputs: prompt })
-      }
-    );
+    const encodedPrompt = encodeURIComponent(prompt);
+    const url = `https://image.pollinations.ai/prompt/${encodedPrompt}?width=1024&height=1024&nologo=true`;
+
+    const response = await fetch(url);
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      return res.status(response.status).json({ error: err?.error || 'HuggingFace API error' });
+      return res.status(response.status).json({ error: 'Image generation failed' });
     }
 
     const buffer = await response.arrayBuffer();
-    res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'no-store');
     res.send(Buffer.from(buffer));
 
