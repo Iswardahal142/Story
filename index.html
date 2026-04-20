@@ -1043,177 +1043,6 @@ html, body {
   white-space:nowrap;
 }
 
-/* ══ ELEVENLABS SIDEBAR ══ */
-.el-sidebar-overlay {
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.7);
-  z-index: 300;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-.el-sidebar-overlay.open { opacity: 1; pointer-events: all; }
-
-.el-sidebar {
-  position: fixed;
-  top: 0; right: 0; bottom: 0;
-  width: 300px;
-  max-width: 90vw;
-  background: var(--panel);
-  border-left: 1px solid #330044;
-  z-index: 301;
-  display: flex;
-  flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.3s;
-  overflow-y: auto;
-}
-.el-sidebar.open { transform: translateX(0); }
-
-.el-sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid #330044;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: #0d0015;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-.el-sidebar-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #cc88ff;
-  letter-spacing: 1px;
-}
-
-.el-sidebar-body {
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  flex: 1;
-}
-
-.el-api-card {
-  background: var(--panel2);
-  border: 1px solid #2a003a;
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-}
-.el-api-card.active-key {
-  border-color: #44bb66;
-  background: #001a00;
-}
-.el-api-card.exhausted {
-  border-color: #440000;
-  opacity: 0.6;
-}
-
-.el-api-label {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.el-api-key-text {
-  font-size: 12px;
-  color: #888;
-  font-family: monospace;
-  word-break: break-all;
-}
-.el-api-chars {
-  font-size: 11px;
-  color: var(--bone-dim);
-}
-.el-api-status {
-  font-size: 10px;
-  padding: 2px 8px;
-  border-radius: 20px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-.el-status-active { background: #003300; color: #44bb66; border: 1px solid #44bb66; }
-.el-status-waiting { background: #1a0033; color: #cc88ff; border: 1px solid #8800cc; }
-.el-status-exhausted { background: #220000; color: #cc4444; border: 1px solid #440000; }
-
-.el-add-form {
-  background: #0d0015;
-  border: 1px dashed #440066;
-  border-radius: 10px;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.el-add-input {
-  background: var(--panel2);
-  border: 1px solid #330044;
-  color: var(--bone);
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-family: monospace;
-  outline: none;
-  width: 100%;
-}
-.el-add-input:focus { border-color: #8800cc; }
-.el-add-input::placeholder { color: #444; }
-
-.el-chars-bar {
-  height: 4px;
-  background: #1a001a;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 2px;
-}
-.el-chars-fill {
-  height: 100%;
-  border-radius: 2px;
-  transition: width 0.4s;
-}
-
-/* FAB button to open sidebar */
-.el-fab {
-  position: fixed;
-  bottom: 160px;
-  right: 16px;
-  width: 44px; height: 44px;
-  background: linear-gradient(135deg, #6600aa, #330066);
-  border: 1px solid #8800cc;
-  color: #fff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  font-size: 18px;
-  z-index: 50;
-  box-shadow: 0 4px 16px rgba(100,0,180,0.5);
-  transition: all 0.2s;
-}
-.el-fab:hover { transform: scale(1.1); }
-.el-fab-badge {
-  position: absolute;
-  top: -4px; right: -4px;
-  background: #44bb66;
-  color: #000;
-  font-size: 9px;
-  font-weight: 900;
-  width: 16px; height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ══ POLLINATIONS IMAGE ══ */
 .scene-img-wrap {
   width: 100%;
@@ -1617,34 +1446,6 @@ html, body {
       <div id="charsOutput"></div>
     </div>
 
-
-    <!-- Together AI Image API Panel -->
-    <div class="analysis-panel" id="panelEl" style="display:none;">
-      <div class="analysis-generate-bar" style="background:#0a0a00;border-color:#443300;">
-        <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;margin-bottom:4px;">🎨 Hugging Face — Image API Keys</div>
-        <div style="font-size:12px;color:#666;line-height:1.6;">Multiple keys add karo — ek ka limit hone par auto-switch hoga 🔄<br>Fast free images (FLUX.1-schnell — better quality, faster)</div>
-
-        <div id="togetherActiveInfo" style="display:none;background:#001a00;border:1px solid #44bb66;border-radius:8px;padding:10px;">
-          <div style="font-size:10px;color:#44bb66;letter-spacing:2px;margin-bottom:4px;">✅ ACTIVE KEY</div>
-          <div id="togetherActiveKeyName" style="font-size:12px;color:#c8e8c8;font-family:monospace;"></div>
-        </div>
-
-        <div id="togetherKeysList"></div>
-
-        <div class="el-add-form" style="border-color:#443300;">
-          <div style="font-size:10px;color:#ffaa00;letter-spacing:2px;text-transform:uppercase;">➕ API Key Add Karo</div>
-          <input class="el-add-input" id="togetherNewKeyInput" type="password" placeholder="hf_... Hugging Face Token" style="border-color:#443300;">
-          <input class="el-add-input" id="togetherNewKeyName" type="text" placeholder="Label (e.g. Account 1)" style="font-family:'Noto Sans Devanagari',sans-serif;border-color:#443300;">
-          <button class="btn btn-primary" onclick="addTogetherKey()" style="font-size:12px;padding:10px;background:linear-gradient(135deg,#aa6600,#664400);">➕ Add Key</button>
-        </div>
-
-        <div style="font-size:10px;color:#333;line-height:1.6;padding:4px;">
-          💡 huggingface.co pe signup karo → Settings → Access Tokens → New Token<br>
-          💡 Free unlimited — token format: hf_xxxxxxxxxxxx
-        </div>
-      </div>
-    </div>
-
     <!-- ══ YOUTUBE EXPORT PANEL ══ -->
     <div class="analysis-panel" id="panelYt" style="display:none;">
 
@@ -1768,7 +1569,6 @@ function showScreen(id) {
   });
   if (id === 'screenSetup') renderSetupEpList();
   if (id === 'screenStory') scrollToBottom();
-  updateElFab();
 }
 function goToSetup() {
   saveCurrentEpisode(true);
@@ -2326,9 +2126,7 @@ function switchTab(tab) {
   document.getElementById('tabYt').classList.toggle('active', tab === 'yt');
   document.getElementById('panelScenes').style.display = tab === 'scenes' ? 'flex' : 'none';
   document.getElementById('panelChars').style.display = tab === 'chars' ? 'flex' : 'none';
-  document.getElementById('panelEl').style.display = tab === 'el' ? 'flex' : 'none';
   document.getElementById('panelYt').style.display = tab === 'yt' ? 'flex' : 'none';
-  if (tab === 'el') renderElKeys();
   if (tab === 'yt') { renderYtChecklist(); }
 }
 
@@ -3591,100 +3389,6 @@ function goToYtExport() {
   setTimeout(function() { switchTab('yt'); }, 150);
 }
 
-const TOGETHER_SK = 'kaali_raat_together_keys';
-
-function getTogetherKeys() {
-  try { return JSON.parse(localStorage.getItem(TOGETHER_SK)) || []; } catch { return []; }
-}
-function saveTogetherKeys(keys) {
-  try { localStorage.setItem(TOGETHER_SK, JSON.stringify(keys)); } catch {}
-}
-function getActiveTogetherKey() {
-  return getTogetherKeys().find(function(k) { return !k.exhausted; }) || null;
-}
-function addTogetherKey() {
-  const keyInput = document.getElementById('togetherNewKeyInput');
-  const nameInput = document.getElementById('togetherNewKeyName');
-  const key = keyInput.value.trim();
-  const name = nameInput.value.trim() || ('Account ' + (getTogetherKeys().length + 1));
-  if (!key) { toast('API key daalo!'); return; }
-  const keys = getTogetherKeys();
-  if (keys.find(function(k) { return k.key === key; })) { toast('Yeh key already add hai!'); return; }
-  keys.push({ key: key, name: name, exhausted: false, imagesUsed: 0, addedAt: Date.now() });
-  saveTogetherKeys(keys);
-  keyInput.value = '';
-  nameInput.value = '';
-  renderTogetherKeys();
-  toast('✅ API Key add ho gayi: ' + name);
-}
-function removeTogetherKey(idx) {
-  const keys = getTogetherKeys();
-  keys.splice(idx, 1);
-  saveTogetherKeys(keys);
-  renderTogetherKeys();
-  toast('Key removed');
-}
-function markTogetherKeyExhausted(key) {
-  const keys = getTogetherKeys();
-  const k = keys.find(function(k) { return k.key === key; });
-  if (k) { k.exhausted = true; saveTogetherKeys(keys); renderTogetherKeys(); }
-}
-function markTogetherKeyActive(idx) {
-  const keys = getTogetherKeys();
-  if (keys[idx]) { keys[idx].exhausted = false; saveTogetherKeys(keys); renderTogetherKeys(); toast('Key active kar di!'); }
-}
-function renderTogetherKeys() {
-  const list = document.getElementById('togetherKeysList');
-  const activeInfo = document.getElementById('togetherActiveInfo');
-  const activeKeyName = document.getElementById('togetherActiveKeyName');
-  if (!list) return;
-  const keys = getTogetherKeys();
-  const activeKey = getActiveTogetherKey();
-  if (activeInfo) {
-    activeInfo.style.display = keys.length ? 'block' : 'none';
-    if (activeKeyName && keys.length) {
-      activeKeyName.textContent = activeKey
-        ? (activeKey.name + ' — ' + activeKey.key.slice(0,8) + '...')
-        : 'Saari keys exhausted!';
-    }
-  }
-  if (!keys.length) {
-    list.innerHTML = '<div style="text-align:center;padding:16px;color:#333;font-size:12px;">Koi key nahi — upar se add karo</div>';
-    return;
-  }
-  list.innerHTML = keys.map(function(k, i) {
-    const isActive = activeKey && activeKey.key === k.key;
-    const statusText = isActive ? 'ACTIVE' : k.exhausted ? 'EXHAUSTED' : 'WAITING';
-    const icon = isActive ? '✅' : k.exhausted ? '❌' : '⏳';
-    const labelColor = isActive ? '#44bb66' : k.exhausted ? '#cc4444' : '#ffaa00';
-    const cardBorder = isActive ? '#44bb66' : k.exhausted ? '#440000' : '#443300';
-    const regenBtn = k.exhausted
-      ? '<button class="img-copy-btn" onclick="markTogetherKeyActive(' + i + ')" style="font-size:10px;padding:4px 10px;border-color:#44bb66;color:#44bb66;">Active Karo</button>'
-      : '';
-    return '<div class="el-api-card" style="border-color:' + cardBorder + ';margin-bottom:8px;">'
-      + '<div style="display:flex;align-items:center;justify-content:space-between;">'
-      + '<div style="font-size:11px;color:' + labelColor + ';">' + icon + ' ' + k.name + '</div>'
-      + '<span class="el-api-status" style="background:#1a1100;color:' + labelColor + ';border:1px solid ' + cardBorder + ';">' + statusText + '</span>'
-      + '</div>'
-      + '<div class="el-api-key-text">' + k.key.slice(0,12) + '...</div>'
-      + '<div style="font-size:11px;color:#666;">' + (k.imagesUsed || 0) + ' images used (~$' + ((k.imagesUsed||0)*0.003).toFixed(3) + ' spent)</div>'
-      + '<div style="display:flex;gap:6px;margin-top:4px;">'
-      + regenBtn
-      + '<button class="img-copy-btn" onclick="removeTogetherKey(' + i + ')" style="font-size:10px;padding:4px 10px;border-color:#440000;color:#cc4444;">Remove</button>'
-      + '</div></div>';
-  }).join('');
-}
-function openElSidebar() {
-  goToAnalysis();
-  setTimeout(function() { switchTab('el'); }, 100);
-}
-function closeElSidebar() { /* no-op */ }
-function updateElFab() {
-  renderTogetherKeys();
-}
-function renderElKeys() { renderTogetherKeys(); } // backward compat
-
-
 // ══ TOAST ══
 let toastTimer;
 function toast(msg) {
@@ -3700,7 +3404,6 @@ window.addEventListener('load', () => {
   load();
   restoreSetupForm();
   renderSetupEpList();
-  updateElFab();
 });
 
 // ══ THUMBNAIL COPY / MODAL ══
